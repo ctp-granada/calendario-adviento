@@ -1,17 +1,36 @@
 rules_version = '2';
 
-// Reglas de seguridad del Calendario de Adviento.
-// Cambia TU_CORREO@go.ugr.es por tu correo (y añade otros profesores si hace falta).
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function signedIn() { return request.auth != null; }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
 
     function isTeacher() {
-      return signedIn()
-        && request.auth.token.email_verified == true
-        && request.auth.token.email in ['TU_CORREO@go.ugr.es'];
+      return isVerifiedUser()
+        && 'email' in request.auth.token
+        && request.auth.token.email.lower() in ['ctp@go.ugr.es'];
     }
 
     // Puntuación máxima posible: 23 días x 150 + día 24 x 300 = 3750
@@ -20,32 +39,164 @@ service cloud.firestore {
           && d.puertas is int && d.puertas >= 0 && d.puertas <= 24;
     }
 
-    // Una ficha por alumno, con el uid de Firebase como identificador
-    match /alumnos/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
-
-      // Al crearla empieza vacía; si entra con Google, el correo tiene que ser el suyo
-      allow create: if signedIn() && request.auth.uid == uid
-        && request.resource.data.respuestas.size() == 0
-        && request.resource.data.puntos == 0
+    function isValidAlumnoCreate(d) {
+      return d.keys().hasAll([
+          'nombre', 'email', 'grupo', 'respuestas',
+          'puntos', 'aciertos', 'puertas', 'racha', 'mejorRacha',
+          'creado', 'actualizado'
+        ])
+        && d.keys().hasOnly([
+          'nombre', 'email', 'grupo', 'respuestas',
+          'puntos', 'aciertos', 'puertas', 'racha', 'mejorRacha',
+          'creado', 'actualizado'
+        ])
+        && d.nombre is string && d.nombre.size() <= 120
+        && d.email is string && d.email.size() <= 160
+        && d.grupo is string && d.grupo.size() <= 60
+        && d.respuestas is map && d.respuestas.size() == 0
+        && d.puntos is int && d.puntos == 0
+        && d.aciertos is int && d.aciertos == 0
+        && d.puertas is int && d.puertas == 0
+        && d.racha is int && d.racha == 0
+        && d.mejorRacha is int && d.mejorRacha == 0
+        && d.creado == request.time
+        && d.actualizado == request.time
         && (!('email' in request.auth.token)
-            || request.resource.data.email == request.auth.token.email.lower());
-
-      // Puede añadir respuestas, pero nunca borrarlas (así no puede repetir días)
-      // ni cambiar su correo
-      allow update: if signedIn() && request.auth.uid == uid
-        && validScore(request.resource.data)
-        && request.resource.data.respuestas.keys().hasAll(resource.data.respuestas.keys())
-        && request.resource.data.email == resource.data.email;
-
-      allow delete: if isTeacher();
+            || d.email == request.auth.token.email.lower());
     }
 
-    // Clasificación pública para la clase (solo alias y puntos)
+    function isValidAlumnoUpdate(d) {
+      return d.keys().hasAll([
+          'nombre', 'email', 'grupo', 'respuestas',
+          'puntos', 'aciertos', 'puertas', 'racha', 'mejorRacha',
+          'creado', 'actualizado'
+        ])
+        && d.keys().hasOnly([
+          'nombre', 'email', 'grupo', 'respuestas',
+          'puntos', 'aciertos', 'puertas', 'racha', 'mejorRacha',
+          'creado', 'actualizado'
+        ])
+        && d.nombre is string && d.nombre.size() <= 120
+        && d.email is string && d.email.size() <= 160
+        && d.grupo is string && d.grupo.size() <= 60
+        && d.respuestas is map && d.respuestas.size() <= 24
+        && validScore(d)
+        && d.aciertos is int && d.aciertos >= 0 && d.aciertos <= 24
+        && d.racha is int && d.racha >= 0 && d.racha <= 24
+        && d.mejorRacha is int && d.mejorRacha >= 0 && d.mejorRacha <= 24
+        && d.actualizado == request.time;
+    }
+
+    function isValidRanking(d) {
+      return d.keys().hasAll(['alias', 'grupo', 'puntos', 'puertas', 'actualizado'])
+        && d.keys().hasOnly(['alias', 'grupo', 'puntos', 'puertas', 'actualizado'])
+        && d.alias is string && d.alias.size() > 0 && d.alias.size() <= 80
+        && d.grupo is string && d.grupo.size() <= 60
+        && validScore(d)
+        && d.actualizado == request.time;
+    }
+
+    match /alumnos/{uid} {
+      allow get: if isSignedIn() && isValidId(uid) && (request.auth.uid == uid || isTeacher());
+      allow list: if isTeacher();
+
+      allow create: if isVerifiedUser()
+        && isValidId(uid)
+        && request.auth.uid == uid
+        && isValidAlumnoCreate(incoming());
+
+      allow update: if isVerifiedUser()
+        && isValidId(uid)
+        && request.auth.uid == uid
+        && isValidAlumnoUpdate(incoming())
+        && incoming().creado == existing().creado
+        && incoming().email == existing().email
+        && incoming().nombre == existing().nombre
+        && (
+          (
+            incoming().respuestas.keys().hasAll(existing().respuestas.keys())
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'respuestas', 'puntos', 'aciertos', 'puertas', 'racha', 'mejorRacha', 'actualizado'
+            ])
+          )
+          ||
+          (
+            existing().grupo == ''
+            && incoming().diff(existing()).affectedKeys().hasOnly(['grupo', 'actualizado'])
+          )
+        );
+
+      allow delete: if isTeacher() && isValidId(uid);
+    }
+
     match /ranking/{uid} {
-      allow read: if signedIn();
-      allow write: if signedIn() && request.auth.uid == uid && validScore(request.resource.data);
-      allow delete: if isTeacher();
+      allow get: if isSignedIn() && isValidId(uid);
+      allow list: if isSignedIn() && resource.data.puntos >= 0;
+
+      allow create: if isVerifiedUser()
+        && isValidId(uid)
+        && request.auth.uid == uid
+        && isValidRanking(incoming());
+
+      allow update: if isVerifiedUser()
+        && isValidId(uid)
+        && request.auth.uid == uid
+        && isValidRanking(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'alias', 'grupo', 'puntos', 'puertas', 'actualizado'
+        ]);
+
+      allow delete: if isTeacher() && isValidId(uid);
+    }
+
+    function isValidStatsCreate(d) {
+      return d.keys().hasAll(['visitas', 'actualizado'])
+        && d.keys().hasOnly(['visitas', 'actualizado'])
+        && d.visitas is int && d.visitas == 1
+        && d.actualizado == request.time;
+    }
+
+    function isValidStatsUpdate(d) {
+      return d.keys().hasAll(['visitas', 'actualizado'])
+        && d.keys().hasOnly(['visitas', 'actualizado'])
+        && d.visitas is int && d.visitas == existing().visitas + 1
+        && d.actualizado == request.time;
+    }
+
+    function isValidValoracion(d) {
+      return d.keys().hasAll(['puntuacion', 'actualizado'])
+        && d.keys().hasOnly(['puntuacion', 'actualizado'])
+        && d.puntuacion is int && d.puntuacion >= 0 && d.puntuacion <= 5
+        && d.actualizado == request.time;
+    }
+
+    match /estadisticas/{statId} {
+      allow get: if isSignedIn() && isValidId(statId) && statId == 'general';
+      allow create: if isVerifiedUser()
+        && isValidId(statId)
+        && statId == 'general'
+        && isValidStatsCreate(incoming());
+      allow update: if isVerifiedUser()
+        && isValidId(statId)
+        && statId == 'general'
+        && isValidStatsUpdate(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['visitas', 'actualizado']);
+      allow delete: if false;
+    }
+
+    match /valoraciones/{uid} {
+      allow get: if isSignedIn() && isValidId(uid);
+      allow list: if isSignedIn() && resource.data.puntuacion >= 0 && resource.data.puntuacion <= 5;
+      allow create: if isVerifiedUser()
+        && isValidId(uid)
+        && request.auth.uid == uid
+        && isValidValoracion(incoming());
+      allow update: if isVerifiedUser()
+        && isValidId(uid)
+        && request.auth.uid == uid
+        && isValidValoracion(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['puntuacion', 'actualizado']);
+      allow delete: if isTeacher() && isValidId(uid);
     }
   }
 }

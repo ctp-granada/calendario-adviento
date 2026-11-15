@@ -1,9 +1,17 @@
 {
   "hosting": {
     "public": ".",
-    "ignore": ["firebase.json", "firestore.rules", "LEEME.md", "README.md", "**/.*"]
+    "ignore": [
+      "firebase.json", "firestore.rules", "LEEME.md", "README.md",
+      "package.json", "bun.lock", "server.js", "metadata.json",
+      "firebase-blueprint.json", "eslint.config.mjs", ".env.example",
+      "node_modules/**", "**/.*"
+    ]
   },
-  "firestore": {
-    "rules": "firestore.rules"
-  }
+  "firestore": [
+    {
+      "database": "ai-studio-calendariodeadvi-b5e0aa28-8f20-469d-b8b2-fb70185aaa61",
+      "rules": "firestore.rules"
+    }
+  ]
 }

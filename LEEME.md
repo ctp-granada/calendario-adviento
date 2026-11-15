@@ -1,62 +1,59 @@
 # Calendario de Adviento · Bioquímica Enfermería (versión con Firebase)
 
+Prof. Francisco Hernández Torres y Carolina Torres Perales · Departamento de Bioquímica y Biología Molecular III e Inmunología · UGR
+
 ## Qué hay en la carpeta
 
 | Archivo | Para qué sirve |
 |---|---|
 | `index.html` | El calendario que juegan los alumnos |
-| `profesor.html` | Tu panel: alumnos, puntos, % de acierto por día y descarga en CSV |
-| `firebase-config.js` | **El único archivo que tienes que editar** (datos del proyecto y ajustes) |
+| `profesor.html` | Tu panel: alumnos, puntos, % de acierto por día, visitas, valoración y descarga en CSV |
+| `firebase-applet-config.json` | Datos del proyecto de Firebase (**adviento-483c6**), ya rellenos |
+| `firebase-config.js` | Ajustes del juego: profesores, dominios de correo, grupos y clasificación |
 | `firestore.rules` | Reglas de seguridad de la base de datos |
-| `firebase.json` | Configuración para publicar con Firebase Hosting |
+| `firebase.json` | Configuración para publicar con Firebase Hosting y desplegar las reglas |
+| `server.js`, `package.json`, `metadata.json`, `firebase-blueprint.json`… | Archivos de Google AI Studio. Solo hacen falta si publicas desde AI Studio |
 
-## Puesta en marcha (unos 20 minutos)
+## Lo que ya está hecho
+- El proyecto de Firebase existe y su configuración está en `firebase-applet-config.json`.
+- La base de datos es una base con nombre propio creada por AI Studio:
+  `ai-studio-calendariodeadvi-b5e0aa28-8f20-469d-b8b2-fb70185aaa61`.
+- Tu correo (`ctp@go.ugr.es`) figura como profesor en `firebase-config.js` y en `firestore.rules`.
+  Para añadir a otro profesor, pon su correo **en los dos archivos**.
 
-### 1. Crea el proyecto
-1. Entra en <https://console.firebase.google.com> con tu cuenta de Google y pulsa **Crear un proyecto** (por ejemplo, `adviento-bioquimica`). Google Analytics no hace falta.
-2. En la página del proyecto, pulsa el icono **`</>`** (Web) para añadir una app web. Ponle un nombre y regístrala.
-3. Te mostrará un bloque `const firebaseConfig = { ... }`. Copia esos valores en `firebase-config.js`.
+## Comprobaciones en la consola de Firebase (<https://console.firebase.google.com>, proyecto adviento-483c6)
+1. **Authentication → Método de acceso:** **Google** tiene que estar activado.
+2. **Firestore Database:** elige arriba la base `ai-studio-calendariodeadvi-…` y, en la pestaña **Reglas**, comprueba que está el contenido de `firestore.rules`. Si no, pégalo y pulsa **Publicar**. Ojo: no lo pegues en la base `(default)`.
+3. **Authentication → Configuración → Dominios autorizados:** añade el dominio desde el que vayas a publicar el calendario (mira abajo).
 
-### 2. Activa el inicio de sesión
-**Compilación → Authentication → Comenzar → Método de acceso**
-- Activa **Google** (es la opción recomendada: `acceso: "google"`).
-- Si prefieres que los alumnos solo escriban su nombre y correo, activa también **Anónimo** y pon `acceso: "nombre"` en `firebase-config.js`.
+## Publicar la web
+**Opción A, GitHub Pages** (el repositorio ya es público):
+1. En GitHub, ve a **Settings → Pages**. En «Source» elige **Deploy from a branch**, rama **main** y carpeta **/ (root)**.
+2. La dirección será `https://ctp-granada.github.io/calendario-adviento/` y el panel, `…/profesor.html`.
+3. Añade `ctp-granada.github.io` a los **Dominios autorizados** de Firebase.
+4. Las reglas tienes que publicarlas a mano en la consola (paso 2 de arriba).
 
-### 3. Crea la base de datos
-**Compilación → Firestore Database → Crear base de datos**
-- Ubicación: **europe-southwest1 (Madrid)**, para que los datos queden en la UE.
-- Elige el modo de producción.
-- En la pestaña **Reglas**, borra lo que haya, pega el contenido de `firestore.rules`, **cambia `TU_CORREO@go.ugr.es` por tu correo** y pulsa **Publicar**.
-
-### 4. Revisa los ajustes en `firebase-config.js`
-- `profesores`: tu correo (el mismo que pusiste en las reglas).
-- `dominios`: los dominios de correo que admites. Comprueba con qué cuenta entran tus alumnos (`@go.ugr.es`, `@correo.ugr.es`…).
-- `grupos`: tus grupos de prácticas, o `[]` si no quieres preguntarlo.
-- `ranking`: `true` para mostrar la clasificación de la clase (solo el nombre y la inicial del apellido).
-
-### 5. Publica la web
-**Opción A, Firebase Hosting** (recomendada; el dominio se autoriza solo):
+**Opción B, Firebase Hosting** (publica la web y las reglas a la vez, en la base correcta):
 ```bash
 npm install -g firebase-tools
 firebase login
-cd carpeta-del-calendario
-firebase use --add          # elige tu proyecto
+cd calendario-adviento
+firebase use adviento-483c6
 firebase deploy
 ```
-Te dará una dirección como `https://adviento-bioquimica.web.app`. Esa es la que compartes con los alumnos en PRADO. Tu panel estará en `https://adviento-bioquimica.web.app/profesor.html`.
-Con `firebase deploy` también se publican las reglas de `firestore.rules`.
+La dirección será `https://adviento-483c6.web.app`. Ese dominio ya está autorizado.
 
-**Opción B, sin instalar nada:** arrastra la carpeta a <https://app.netlify.com/drop>. Después, en Firebase, ve a **Authentication → Configuración → Dominios autorizados** y añade el dominio que te dé Netlify.
+**Opción C, Google AI Studio:** sigue funcionando como hasta ahora, con `server.js`.
 
-> ⚠️ El calendario no funciona con Firebase si abres `index.html` con doble clic, porque necesita estar publicado en una web.
-> Si `firebase-config.js` está sin rellenar, el juego funciona igualmente, pero solo guarda las respuestas en el navegador de cada alumno.
+> ⚠️ El calendario necesita estar publicado en una web. Si abres `index.html` con doble clic no conecta con Firebase.
 
 ## Cómo se guardan los datos
-- **`alumnos/{uid}`**: nombre, correo, grupo, respuestas de cada día (acierto y puntos), total, racha y fecha de la última actividad. Cada alumno solo puede leer y escribir su propia ficha; tú puedes leerlas todas.
-- **`ranking/{uid}`**: alias y puntos, visibles para la clase.
-- Las reglas impiden borrar respuestas ya dadas (no se puede repetir un día), cambiar el correo o poner más de 3.750 puntos.
+- **`alumnos/{uid}`**: nombre, correo, grupo, respuestas de cada día (acierto y puntos), total, racha y última actividad. Cada alumno solo puede leer y escribir su propia ficha; tú puedes leerlas todas.
+- **`ranking/{uid}`**: alias (nombre e inicial del apellido) y puntos, visibles para la clase.
+- **`estadisticas/general`**: contador de visitas. Suma 1 por cada sesión de navegador de un alumno que ha iniciado sesión.
+- **`valoraciones/{uid}`**: la nota del 0 al 5 de cada alumno (una por alumno, que puede cambiar).
+- Las reglas impiden borrar respuestas ya dadas (no se puede repetir un día), cambiar el nombre o el correo y poner más de 3.750 puntos.
 
 ## Antes de compartirlo
-- Cambia el código del modo profesor (`TEACHER_CODE`, en `index.html`). Ahora es `UGR2026`.
-- Protección de datos: guardas el nombre y el correo de los alumnos. Avísales en PRADO de para qué se usan (seguimiento de la actividad) y borra los datos al terminar el curso: en la consola, **Firestore → alumnos → Eliminar colección**.
-- El plan gratuito de Firebase (Spark) sobra para una o varias clases.
+- Cambia el código del modo profesor (`TEACHER_CODE`, en `index.html`). Ahora es `UGR2026` y, como el repositorio es público, cualquiera puede verlo.
+- Protección de datos: guardas el nombre y el correo de los alumnos. Avísales en PRADO de para qué se usan y borra los datos al terminar el curso (en la consola, **Firestore → alumnos → Eliminar colección**).

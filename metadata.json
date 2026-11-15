@@ -1,0 +1,6 @@
+{
+  "name": "Calendario de Adviento · Bioquímica Enfermería",
+  "description": "Calendario de Adviento interactivo de Bioquímica para Enfermería (UGR) con retos diarios, puntuación, ranking y panel del profesor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,177 @@
+{
+  "entities": {
+    "Alumno": {
+      "title": "Alumno",
+      "description": "Ficha de progreso y respuestas de un estudiante en el Calendario de Adviento de Bioquímica.",
+      "type": "object",
+      "properties": {
+        "nombre": {
+          "type": "string",
+          "description": "Nombre completo del alumno.",
+          "maxLength": 120
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Correo electrónico institucional UGR del alumno.",
+          "maxLength": 160
+        },
+        "grupo": {
+          "type": "string",
+          "description": "Grupo de prácticas asignado.",
+          "maxLength": 60
+        },
+        "respuestas": {
+          "type": "object",
+          "description": "Mapa de respuestas por día (1-24), indicando acierto, puntos y marca de tiempo."
+        },
+        "puntos": {
+          "type": "integer",
+          "description": "Puntuación acumulada total (0 a 3750)."
+        },
+        "aciertos": {
+          "type": "integer",
+          "description": "Número total de preguntas acertadas (0 a 24)."
+        },
+        "puertas": {
+          "type": "integer",
+          "description": "Número de puertas abiertas y respondidas (0 a 24)."
+        },
+        "racha": {
+          "type": "integer",
+          "description": "Racha actual de aciertos consecutivos (0 a 24)."
+        },
+        "mejorRacha": {
+          "type": "integer",
+          "description": "Mejor racha histórica de aciertos consecutivos (0 a 24)."
+        },
+        "creado": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Marca de tiempo de creación del registro."
+        },
+        "actualizado": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Marca de tiempo de la última actualización."
+        }
+      },
+      "required": [
+        "nombre",
+        "email",
+        "grupo",
+        "respuestas",
+        "puntos",
+        "aciertos",
+        "puertas",
+        "racha",
+        "mejorRacha",
+        "creado",
+        "actualizado"
+      ]
+    },
+    "RankingEntry": {
+      "title": "RankingEntry",
+      "description": "Entrada pública de la clasificación de clase sin correo ni datos sensibles.",
+      "type": "object",
+      "properties": {
+        "alias": {
+          "type": "string",
+          "description": "Nombre e inicial del primer apellido del estudiante.",
+          "maxLength": 80
+        },
+        "grupo": {
+          "type": "string",
+          "description": "Grupo de prácticas del estudiante.",
+          "maxLength": 60
+        },
+        "puntos": {
+          "type": "integer",
+          "description": "Puntuación total acumulada (0 a 3750)."
+        },
+        "puertas": {
+          "type": "integer",
+          "description": "Número de puertas completadas (0 a 24)."
+        },
+        "actualizado": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Última actualización en el ranking."
+        }
+      },
+      "required": [
+        "alias",
+        "grupo",
+        "puntos",
+        "puertas",
+        "actualizado"
+      ]
+    },
+    "Estadisticas": {
+      "title": "Estadisticas",
+      "description": "Contadores globales de uso del calendario, incluyendo visitas totales.",
+      "type": "object",
+      "properties": {
+        "visitas": {
+          "type": "integer",
+          "description": "Número total de visitas registradas."
+        },
+        "actualizado": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Marca de tiempo de la última visita registrada."
+        }
+      },
+      "required": [
+        "visitas",
+        "actualizado"
+      ]
+    },
+    "Valoracion": {
+      "title": "Valoracion",
+      "description": "Valoración general de 0 a 5 ('¿Te gusta?') enviada por un usuario autenticado.",
+      "type": "object",
+      "properties": {
+        "puntuacion": {
+          "type": "integer",
+          "description": "Puntuación entera de 0 a 5."
+        },
+        "actualizado": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Marca de tiempo de la valoración."
+        }
+      },
+      "required": [
+        "puntuacion",
+        "actualizado"
+      ]
+    }
+  },
+  "firestore": {
+    "/alumnos/{uid}": {
+      "schema": {
+        "$ref": "#/entities/Alumno"
+      },
+      "description": "Registro individual de progreso y puntuación de cada estudiante autenticado."
+    },
+    "/ranking/{uid}": {
+      "schema": {
+        "$ref": "#/entities/RankingEntry"
+      },
+      "description": "Tabla clasificatoria pública visible para los estudiantes autenticados."
+    },
+    "/estadisticas/{statId}": {
+      "schema": {
+        "$ref": "#/entities/Estadisticas"
+      },
+      "description": "Documento de estadísticas generales (/estadisticas/general) con el contador de visitas."
+    },
+    "/valoraciones/{uid}": {
+      "schema": {
+        "$ref": "#/entities/Valoracion"
+      },
+      "description": "Valoraciones individuales de 0 a 5 de los usuarios autenticados."
+    }
+  }
+}

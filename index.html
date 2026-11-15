@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Calendario de Adviento · Bioquímica Enfermería</title>
+<meta name="description" content="Calendario de Adviento interactivo de Bioquímica para Enfermería (UGR) con retos diarios, puntuación, ranking y panel del profesor.">
+<meta property="og:title" content="Calendario de Adviento · Bioquímica Enfermería">
+<meta property="og:description" content="Calendario de Adviento interactivo de Bioquímica para Enfermería (UGR) con retos diarios, puntuación, ranking y panel del profesor.">
+<meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -194,6 +198,16 @@ footer{margin-top:22px;text-align:center;font-size:12px;opacity:.6}
 .rk li{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;font-weight:700;background:rgba(255,255,255,.06);border-radius:10px;padding:6px 10px}
 .rk li.me{background:rgba(242,193,78,.22);outline:1px solid rgba(242,193,78,.6)}
 .rk li b{color:var(--gold2);font-family:Fredoka}
+.visit-row{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;font-weight:700;background:rgba(255,255,255,.06);border-radius:10px;padding:7px 10px;margin-bottom:10px}
+.visit-row b{font-family:Fredoka;font-size:17px;color:var(--gold2)}
+.rating-box{background:rgba(255,255,255,.04);border-radius:12px;padding:9px 10px}
+.rating-head{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:13px;font-weight:700;margin-bottom:8px}
+.rating-head b{color:var(--gold2);font-family:Fredoka;font-size:14px}
+.rating-btns{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.rbtn{font-family:Fredoka;font-weight:700;font-size:14px;padding:6px 0;border-radius:9px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:var(--snow);cursor:pointer;transition:transform .12s,background .2s,color .2s}
+.rbtn:hover:not(:disabled){border-color:var(--gold);background:rgba(242,193,78,.2)}
+.rbtn.active{background:var(--gold);color:#3b2a00;border-color:var(--gold)}
+.rbtn:disabled{opacity:.5;cursor:not-allowed}
 .offline{background:rgba(214,69,61,.2);border:1px solid rgba(214,69,61,.5)}
 </style>
 </head>
@@ -205,7 +219,8 @@ footer{margin-top:22px;text-align:center;font-size:12px;opacity:.6}
   <header>
     <div class="brand">
       <h1>Calendario de <span>Adviento</span> 🎄</h1>
-      <p>Bioquímica General · Grado en Enfermería · Un reto cada día del 1 al 24 de diciembre</p>
+      <p>Bioquímica General · Grado en Enfermería · Prof. Francisco Hernández Torres y Carolina Torres Perales</p>
+      <p style="font-size:12.5px;opacity:.8;margin-top:2px">Departamento de Bioquímica y Biología Molecular III e Inmunología · UGR · Un reto cada día del 1 al 24 de diciembre</p>
     </div>
     <div class="stats">
       <div class="stat"><b id="sScore">0</b><small>Puntos</small></div>
@@ -245,9 +260,31 @@ footer{margin-top:22px;text-align:center;font-size:12px;opacity:.6}
           <button class="btn ghost sm" id="bLogout" style="display:none">🚪 Salir</button>
         </div>
       </div>
+      <div class="panel" id="communityPanel">
+        <h3>📊 Visitas y valoración</h3>
+        <div class="visit-row">
+          <span>Visitas al calendario</span>
+          <b id="visitCount">—</b>
+        </div>
+        <div class="rating-box">
+          <div class="rating-head">
+            <span>¿Te gusta? (0 a 5)</span>
+            <b id="ratingSummary">Sin votos</b>
+          </div>
+          <div class="rating-btns" id="ratingBtns" role="group" aria-label="Valoración general de 0 a 5">
+            <button type="button" class="rbtn" data-v="0">0</button>
+            <button type="button" class="rbtn" data-v="1">1</button>
+            <button type="button" class="rbtn" data-v="2">2</button>
+            <button type="button" class="rbtn" data-v="3">3</button>
+            <button type="button" class="rbtn" data-v="4">4</button>
+            <button type="button" class="rbtn" data-v="5">5</button>
+          </div>
+          <p id="ratingMine" style="margin-top:6px;font-size:12px;opacity:.8"></p>
+        </div>
+      </div>
     </aside>
   </div>
-  <footer>Departamento de Bioquímica y Biología Molecular · Facultad de Ciencias de la Salud · UGR</footer>
+  <footer>Departamento de Bioquímica y Biología Molecular III e Inmunología · Facultad de Ciencias de la Salud · UGR · Prof. Francisco Hernández Torres y Carolina Torres Perales</footer>
 </div>
 
 <div id="gate"><div class="modal" id="gateBox" role="dialog" aria-modal="true"></div></div>
@@ -719,20 +756,14 @@ window.fbNeedLogin=function(){const aj=FB.ajustes,g=$("#gate"),b=$("#gateBox");
   const grupo=aj.grupos&&aj.grupos.length?`<select class="field" id="gGrupo"><option value="">Elige tu grupo…</option>${aj.grupos.map(x=>`<option>${esc(x)}</option>`).join("")}</select>`:"";
   b.innerHTML=`<div class="mhead"><div><span class="dayb">🎄 Calendario de Adviento</span></div></div><div class="mbody">
     <div class="q" style="margin-top:0">¡Bienvenida/o!</div>
-    <p style="margin:0 0 6px;color:var(--muted);font-size:14px">Identifícate para que tus respuestas y tus puntos queden guardados. Podrás seguir desde cualquier dispositivo${aj.acceso==="google"?"":" (usando el mismo navegador)"}.</p>
-    ${aj.acceso==="google"?`${grupo}<button class="btn gold gbtn" id="gGo">🔐 Entrar con mi cuenta de la UGR</button>`
-     :`<input class="field" id="gNom" maxlength="60" placeholder="Nombre y apellidos"><input class="field" id="gMail" type="email" maxlength="80" placeholder="Correo de la UGR">${grupo}<button class="btn gold gbtn" id="gGo">Empezar</button>`}
+    <p style="margin:0 0 6px;color:var(--muted);font-size:14px">Identifícate para que tus respuestas y tus puntos queden guardados. Podrás seguir desde cualquier dispositivo.</p>
+    ${grupo}<button class="btn gold gbtn" id="gGo">🔐 Entrar con mi cuenta de la UGR</button>
     <div class="err" id="gErr" style="margin-top:8px"></div></div>`;
   g.classList.add("show");
   $("#gGo").onclick=async()=>{const gr=$("#gGrupo")?$("#gGrupo").value:"";$("#gErr").textContent="";
     if(aj.grupos&&aj.grupos.length&&!gr){$("#gErr").textContent="Elige tu grupo.";return;}
     try{$("#gGo").disabled=true;
-      if(aj.acceso==="google")await FB.loginGoogle(gr);
-      else{const n=$("#gNom").value.trim(),m=$("#gMail").value.trim().toLowerCase();
-        if(n.length<3){throw new Error("Escribe tu nombre y apellidos.");}
-        if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m))throw new Error("Escribe un correo válido.");
-        const dom=m.split("@")[1];if(aj.dominios.length&&!aj.dominios.includes(dom))throw new Error("Usa tu correo de la UGR ("+aj.dominios.join(", ")+").");
-        await FB.loginNombre(n,m,gr);}
+      await FB.loginGoogle(gr);
     }catch(e){$("#gErr").textContent=e.code==="auth/popup-closed-by-user"?"Has cerrado la ventana de acceso.":(e.message||"No se pudo entrar.");$("#gGo").disabled=false;}};};
 window.fbError=function(msg){const e=$("#gErr");if(e){e.textContent=msg;const b=$("#gGo");if(b)b.disabled=false;}else toast(msg);};
 window.fbSignedIn=function(data){
@@ -742,11 +773,44 @@ window.fbSignedIn=function(data){
   try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
   $("#gate").classList.remove("show");$("#bLogout").style.display="";
   $("#who").textContent="Conectado como "+(data.nombre||data.email||"alumno")+(data.grupo?" · "+data.grupo:"");
-  renderGrid();refreshRanking();toast("¡Hola, "+(data.nombre||"").split(" ")[0]+"! 👋");};
+  renderGrid();refreshRanking();refreshCommunity();toast("¡Hola, "+(data.nombre||"").split(" ")[0]+"! 👋");};
 async function refreshRanking(){if(!(window.FB&&FB.ready&&FB.ajustes.ranking))return;
   try{const list=await FB.ranking(),me=FB.uid();
     $("#rkList").innerHTML=list.length?list.map((x,i)=>`<li class="${x.id===me?"me":""}"><span>${["🥇","🥈","🥉"][i]||(i+1)+"."} ${esc(x.alias)}</span><b>${x.puntos}</b></li>`).join(""):"<li>Aún no hay puntuaciones</li>";
   }catch(e){console.error(e);$("#rkList").innerHTML="<li>No disponible</li>";}}
+function renderRatingUI(stats){
+  const elSum=$("#ratingSummary"),elMine=$("#ratingMine");
+  if(!stats||!stats.count){elSum.textContent="Sin votos";}
+  else{elSum.textContent=`${stats.avg.toFixed(1)} / 5 (${stats.count})`;}
+  document.querySelectorAll("#ratingBtns .rbtn").forEach(b=>{
+    b.classList.toggle("active",stats&&stats.mine===+b.dataset.v);
+  });
+  elMine.textContent=stats&&stats.mine!==null&&stats.mine!==undefined?`Tu valoración: ${stats.mine} / 5`:"Elige una nota del 0 al 5";
+}
+async function refreshCommunity(){
+  if(!(window.FB&&FB.ready))return;
+  try{
+    const visits=await FB.registerVisit();
+    if(visits!==null&&visits!==undefined)$("#visitCount").textContent=visits;
+  }catch(e){console.error(e);}
+  try{
+    const stats=await FB.getRatingStats();
+    renderRatingUI(stats);
+  }catch(e){console.error(e);}
+}
+document.querySelectorAll("#ratingBtns .rbtn").forEach(b=>{
+  b.onclick=async()=>{
+    if(!(window.FB&&FB.ready)){toast("Inicia sesión para guardar tu valoración");return;}
+    const score=+b.dataset.v;
+    document.querySelectorAll("#ratingBtns .rbtn").forEach(x=>x.disabled=true);
+    try{
+      const stats=await FB.rate(score);
+      renderRatingUI(stats);
+      toast(`¡Gracias por tu valoración: ${score}/5! ⭐`);
+    }catch(e){console.error(e);toast("No se pudo guardar la valoración");}
+    finally{document.querySelectorAll("#ratingBtns .rbtn").forEach(x=>x.disabled=false);}
+  };
+});
 $("#bLogout").onclick=()=>{dialog(`<div class="q">¿Cerrar sesión?</div><p style="margin:0;color:var(--muted);font-size:14px">Tus respuestas ya están guardadas. Ciérrala si estás en un ordenador compartido.</p>
   <div class="actions"><button class="btn ghost" style="background:#f3ecdc;color:var(--ink);border:0" onclick="closeModal()">Cancelar</button><button class="btn gold" id="okOut">Salir</button></div>`);
   $("#okOut").onclick=()=>{try{localStorage.removeItem(KEY);}catch(e){}FB.logout();};};
@@ -762,39 +826,116 @@ if(!ok){
   bn.innerHTML="⚠️ <b>Firebase sin configurar:</b> el calendario funciona, pero las respuestas solo se guardan en este navegador. Rellena <code>firebase-config.js</code>.";
 }else{
   const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
-  const { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, onAuthStateChanged, signOut } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
-  const { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, query, orderBy, limit, getDocs } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
-  const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
+  const { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
+  const { getFirestore, doc, getDoc, getDocFromServer, setDoc, runTransaction, serverTimestamp, collection, query, where, orderBy, limit, getDocs } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
+  const app=initializeApp(firebaseConfig), auth=getAuth(app);
+  const db=firebaseConfig.firestoreDatabaseId?getFirestore(app,firebaseConfig.firestoreDatabaseId):getFirestore(app);
+  function handleFirestoreError(error,operationType,path){
+    const errInfo={
+      error:error instanceof Error?error.message:String(error),
+      authInfo:{
+        userId:auth.currentUser?.uid??null,
+        email:auth.currentUser?.email??null,
+        emailVerified:auth.currentUser?.emailVerified??null,
+        isAnonymous:auth.currentUser?.isAnonymous??null,
+        tenantId:auth.currentUser?.tenantId??null,
+        providerInfo:(auth.currentUser?.providerData||[]).map(p=>({providerId:p.providerId??null,email:p.email??null}))
+      },
+      operationType,
+      path
+    };
+    console.error("Firestore Error: ",JSON.stringify(errInfo));
+    throw new Error(JSON.stringify(errInfo));
+  }
+  (async()=>{try{await getDocFromServer(doc(db,"test","connection"));}catch(error){if(error instanceof Error&&error.message.includes("the client is offline")){console.error("Please check your Firebase configuration.");}}})();
   let user=null, pend={nombre:"",email:"",grupo:""}, lastPush=Promise.resolve();
-  const alias=n=>{const p=(n||"Anónimo").trim().split(/\s+/);return p[0]+(p[1]?" "+p[1][0]+".":"");};
+  const alias=n=>{const p=(n||"Anónimo").trim().split(/\s+/);return (p[0]+(p[1]?" "+p[1][0]+".":"")).slice(0,80);};
   window.FB={ready:false,ajustes:AJUSTES,uid:()=>user&&user.uid,
-    async loginGoogle(grupo){pend.grupo=grupo;const pr=new GoogleAuthProvider();
+    async loginGoogle(grupo){pend.grupo=String(grupo||"").slice(0,60);const pr=new GoogleAuthProvider();
       if(AJUSTES.dominios.length===1)pr.setCustomParameters({hd:AJUSTES.dominios[0],prompt:"select_account"});else pr.setCustomParameters({prompt:"select_account"});
       await signInWithPopup(auth,pr);},
-    async loginNombre(nombre,email,grupo){pend={nombre,email,grupo};await signInAnonymously(auth);},
     async logout(){await signOut(auth);location.reload();},
     push(S){const r={};let pts=0,aci=0;
       for(const k in S.answers){const a=S.answers[k];r[k]={ok:!!a.correct,puntos:a.points|0,t:a.t||Date.now()};pts+=a.points|0;if(a.correct)aci++;}
       const n=Object.keys(r).length;
       lastPush=lastPush.then(async()=>{
-        await setDoc(doc(db,"alumnos",user.uid),{respuestas:r,puntos:pts,aciertos:aci,puertas:n,racha:S.streak|0,mejorRacha:S.best|0,actualizado:serverTimestamp()},{merge:true});
-        if(AJUSTES.ranking)await setDoc(doc(db,"ranking",user.uid),{alias:alias(window.__nombre),grupo:window.__grupo||"",puntos:pts,puertas:n,actualizado:serverTimestamp()});
+        const alumnoPath=`alumnos/${user.uid}`;
+        try{
+          await setDoc(doc(db,"alumnos",user.uid),{respuestas:r,puntos:pts,aciertos:aci,puertas:n,racha:S.streak|0,mejorRacha:S.best|0,actualizado:serverTimestamp()},{merge:true});
+        }catch(err){handleFirestoreError(err,"write",alumnoPath);}
+        if(AJUSTES.ranking){
+          const rankingPath=`ranking/${user.uid}`;
+          try{
+            await setDoc(doc(db,"ranking",user.uid),{alias:alias(window.__nombre),grupo:String(window.__grupo||"").slice(0,60),puntos:pts,puertas:n,actualizado:serverTimestamp()});
+          }catch(err){handleFirestoreError(err,"write",rankingPath);}
+        }
       });return lastPush;},
-    async ranking(){const q=query(collection(db,"ranking"),orderBy("puntos","desc"),limit(AJUSTES.tamRanking||10));
-      return (await getDocs(q)).docs.map(d=>({id:d.id,...d.data()}));}
+    async ranking(){
+      const q=query(collection(db,"ranking"),where("puntos",">=",0),orderBy("puntos","desc"),limit(AJUSTES.tamRanking||10));
+      try{return (await getDocs(q)).docs.map(d=>({id:d.id,...d.data()}));}
+      catch(err){handleFirestoreError(err,"list","ranking");}
+    },
+    async registerVisit(){
+      const ref=doc(db,"estadisticas","general");
+      const key="adviento_visit_counted_v1";
+      try{
+        if(!sessionStorage.getItem(key)){
+          const total=await runTransaction(db,async tx=>{
+            const snap=await tx.get(ref);
+            const next=(snap.exists()?(snap.data().visitas|0):0)+1;
+            tx.set(ref,{visitas:next,actualizado:serverTimestamp()});
+            return next;
+          });
+          sessionStorage.setItem(key,"1");
+          return total;
+        }
+        const snap=await getDoc(ref);
+        return snap.exists()?(snap.data().visitas|0):0;
+      }catch(err){handleFirestoreError(err,"write","estadisticas/general");}
+    },
+    async getRatingStats(){
+      const q=query(collection(db,"valoraciones"),where("puntuacion",">=",0),where("puntuacion","<=",5));
+      try{
+        const snap=await getDocs(q);
+        let sum=0,count=0,mine=null;
+        snap.docs.forEach(d=>{
+          const v=d.data().puntuacion;
+          if(typeof v==="number"){sum+=v;count++;if(user&&d.id===user.uid)mine=v;}
+        });
+        return {count,avg:count?sum/count:0,mine};
+      }catch(err){handleFirestoreError(err,"list","valoraciones");}
+    },
+    async rate(score){
+      const val=Math.max(0,Math.min(5,Math.round(Number(score))));
+      const path=`valoraciones/${user.uid}`;
+      try{
+        await setDoc(doc(db,"valoraciones",user.uid),{puntuacion:val,actualizado:serverTimestamp()});
+      }catch(err){handleFirestoreError(err,"write",path);}
+      return await this.getRatingStats();
+    }
   };
   window.fbStart(AJUSTES);
   onAuthStateChanged(auth,async u=>{
     if(!u){FB.ready=false;window.fbNeedLogin();return;}
     try{
-      if(AJUSTES.acceso==="google"){const dom=(u.email||"").toLowerCase().split("@")[1];
+      {const dom=(u.email||"").toLowerCase().split("@")[1];
         if(AJUSTES.dominios.length&&!AJUSTES.dominios.includes(dom)){await signOut(auth);window.fbError("Esa cuenta no es de la UGR. Entra con tu correo "+AJUSTES.dominios.map(d=>"@"+d).join(" o ")+".");return;}}
-      user=u;const ref=doc(db,"alumnos",u.uid);const snap=await getDoc(ref);let data;
+      user=u;const alumnoPath=`alumnos/${u.uid}`;const ref=doc(db,"alumnos",u.uid);
+      let snap;
+      try{snap=await getDoc(ref);}catch(err){handleFirestoreError(err,"get",alumnoPath);}
+      let data;
       if(!snap.exists()){
-        data={nombre:pend.nombre||u.displayName||"",email:(pend.email||u.email||"").toLowerCase(),grupo:pend.grupo||"",
+        data={nombre:String(pend.nombre||u.displayName||"").slice(0,120),email:String(pend.email||u.email||"").toLowerCase().slice(0,160),grupo:String(pend.grupo||"").slice(0,60),
               respuestas:{},puntos:0,aciertos:0,puertas:0,racha:0,mejorRacha:0,creado:serverTimestamp(),actualizado:serverTimestamp()};
-        await setDoc(ref,data);
-      }else{data=snap.data();if(pend.grupo&&!data.grupo){await setDoc(ref,{grupo:pend.grupo},{merge:true});data.grupo=pend.grupo;}}
+        try{await setDoc(ref,data);}catch(err){handleFirestoreError(err,"create",alumnoPath);}
+      }else{
+        data=snap.data();
+        if(pend.grupo&&!data.grupo){
+          const grupoClean=String(pend.grupo).slice(0,60);
+          try{await setDoc(ref,{grupo:grupoClean,actualizado:serverTimestamp()},{merge:true});}catch(err){handleFirestoreError(err,"update",alumnoPath);}
+          data.grupo=grupoClean;
+        }
+      }
       window.__nombre=data.nombre;window.__grupo=data.grupo;
       FB.ready=true;window.fbSignedIn(data);
     }catch(e){console.error(e);window.fbNeedLogin();window.fbError("No se pudo conectar con la base de datos ("+(e.code||e.message)+").");}

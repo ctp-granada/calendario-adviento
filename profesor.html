@@ -45,7 +45,10 @@ tr:hover td{background:#fbf6ea}
 </head>
 <body>
 <header>
-  <h1>Panel del profesor · <span>Calendario de Adviento</span></h1>
+  <div>
+    <h1>Panel del profesor · <span>Calendario de Adviento</span></h1>
+    <p style="margin:3px 0 0;font-size:12.5px;opacity:.85">Departamento de Bioquímica y Biología Molecular III e Inmunología · Prof. Francisco Hernández Torres y Carolina Torres Perales</p>
+  </div>
   <div id="hdr"></div>
 </header>
 <div class="wrap">
@@ -62,6 +65,8 @@ tr:hover td{background:#fbf6ea}
       <div class="card"><b id="cP">0</b><small>Media de puntos</small></div>
       <div class="card"><b id="cD">0</b><small>Media de puertas abiertas</small></div>
       <div class="card"><b id="cH">0</b><small>Activos en las últimas 24 h</small></div>
+      <div class="card"><b id="cV">—</b><small>Visitas totales</small></div>
+      <div class="card"><b id="cR">—</b><small id="cRS">Valoración (0–5)</small></div>
     </div>
     <div class="box">
       <h2>Porcentaje de acierto por día</h2>
@@ -87,18 +92,38 @@ tr:hover td{background:#fbf6ea}
     </div>
   </div>
 </div>
+<footer style="text-align:center;font-size:12px;color:var(--muted);padding:0 20px 24px">Departamento de Bioquímica y Biología Molecular III e Inmunología · Facultad de Ciencias de la Salud · UGR · Prof. Francisco Hernández Torres y Carolina Torres Perales</footer>
 
 <script type="module">
 import { firebaseConfig, AJUSTES } from "./firebase-config.js";
 const V="10.12.2";
 const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
 const { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
-const { getFirestore, collection, getDocs } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
+const { getFirestore, doc, getDoc, getDocFromServer, collection, query, where, getDocs } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
 
 const TOPICS=["Hidratos de carbono","Disacáridos","Glucoproteínas","Colesterol","Lípidos","Glucolípidos","Hemoglobina","Aminoácidos","Regulación enzimática","Señalización","Bioenergética","Vía de las pentosas fosfato","Glucólisis anaerobia","Metabolismo del glucógeno","Cadena respiratoria","β-oxidación","Lipólisis","Ayuno","Regulación de los lípidos","Coenzimas","Síntesis de ácidos grasos","Colesterol y fármacos","Regulación hormonal","Reto final de Nochebuena"];
 const $=s=>document.querySelector(s);
 const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const app=initializeApp(firebaseConfig),auth=getAuth(app);
+const db=firebaseConfig.firestoreDatabaseId?getFirestore(app,firebaseConfig.firestoreDatabaseId):getFirestore(app);
+function handleFirestoreError(error,operationType,path){
+  const errInfo={
+    error:error instanceof Error?error.message:String(error),
+    authInfo:{
+      userId:auth.currentUser?.uid??null,
+      email:auth.currentUser?.email??null,
+      emailVerified:auth.currentUser?.emailVerified??null,
+      isAnonymous:auth.currentUser?.isAnonymous??null,
+      tenantId:auth.currentUser?.tenantId??null,
+      providerInfo:(auth.currentUser?.providerData||[]).map(p=>({providerId:p.providerId??null,email:p.email??null}))
+    },
+    operationType,
+    path
+  };
+  console.error("Firestore Error: ",JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+(async()=>{try{await getDocFromServer(doc(db,"test","connection"));}catch(error){if(error instanceof Error&&error.message.includes("the client is offline")){console.error("Please check your Firebase configuration.");}}})();
 let rows=[],sortK="puntos",sortDir=-1;
 
 $("#bLogin").onclick=async()=>{$("#err").textContent="";try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){$("#err").textContent=e.message;}};
@@ -115,13 +140,26 @@ onAuthStateChanged(auth,async u=>{
 
 async function load(){
   try{
-    const snap=await getDocs(collection(db,"alumnos"));
+    let snap;
+    try{snap=await getDocs(collection(db,"alumnos"));}
+    catch(err){handleFirestoreError(err,"list","alumnos");}
     rows=snap.docs.map(d=>{const x=d.data();return{id:d.id,nombre:x.nombre||"",email:x.email||"",grupo:x.grupo||"",puntos:x.puntos|0,aciertos:x.aciertos|0,
       puertas:x.puertas|0,mejorRacha:x.mejorRacha|0,respuestas:x.respuestas||{},act:x.actualizado&&x.actualizado.toDate?x.actualizado.toDate():null};});
     const grupos=[...new Set(rows.map(r=>r.grupo).filter(Boolean))].sort();
     $("#fGrp").innerHTML='<option value="">Todos los grupos</option>'+grupos.map(g=>`<option>${esc(g)}</option>`).join("");
     render();
-  }catch(e){alertBox("No se pudieron leer los datos: "+(e.code||e.message)+". ¿Has puesto tu correo en firestore.rules y las has publicado?");}
+    try{
+      const st=await getDoc(doc(db,"estadisticas","general"));
+      $("#cV").textContent=st.exists()?(st.data().visitas|0):0;
+    }catch(err){handleFirestoreError(err,"get","estadisticas/general");}
+    try{
+      const vs=await getDocs(query(collection(db,"valoraciones"),where("puntuacion",">=",0),where("puntuacion","<=",5)));
+      let sum=0,cnt=0;
+      vs.docs.forEach(d=>{const p=d.data().puntuacion;if(typeof p==="number"){sum+=p;cnt++;}});
+      $("#cR").textContent=cnt?(sum/cnt).toFixed(1)+" / 5":"—";
+      $("#cRS").textContent=cnt?`Valoración (${cnt} ${cnt===1?"voto":"votos"})`:"Valoración (sin votos)";
+    }catch(err){handleFirestoreError(err,"list","valoraciones");}
+  }catch(e){alertBox("No se pudieron leer los datos: "+(e.code||e.message)+". Comprueba las reglas de Firestore.");}
 }
 function alertBox(m){$("#tb").innerHTML=`<tr><td colspan="9" class="err">${esc(m)}</td></tr>`;}
 function filtered(){const t=$("#fTxt").value.trim().toLowerCase(),g=$("#fGrp").value;
