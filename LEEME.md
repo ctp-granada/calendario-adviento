@@ -43,7 +43,9 @@ firebase deploy
 ```
 La dirección será `https://adviento-483c6.web.app`. Ese dominio ya está autorizado.
 
-**Opción C, Google AI Studio:** sigue funcionando como hasta ahora, con `server.js`.
+**Opción C, Vercel:** importa el repositorio en <https://vercel.com/new>. No cambies nada: `vercel.json` ya indica que es una web estática (sin instalar dependencias y publicando la carpeta `dist`). Después añade el dominio que te dé Vercel (por ejemplo, `calendario-adviento.vercel.app`) a los **Dominios autorizados** de Firebase. Las reglas tienes que publicarlas a mano en la consola.
+
+**Opción D, Google AI Studio:** sigue funcionando como hasta ahora, con `server.js`.
 
 > ⚠️ El calendario necesita estar publicado en una web. Si abres `index.html` con doble clic no conecta con Firebase.
 

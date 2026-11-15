@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo 'Sin dependencias: web estática'",
+  "buildCommand": "mkdir -p dist && cp index.html profesor.html firebase-config.js firebase-applet-config.json dist/",
+  "outputDirectory": "dist"
+}
