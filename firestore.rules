@@ -1,0 +1,51 @@
+rules_version = '2';
+
+// Reglas de seguridad del Calendario de Adviento.
+// Cambia TU_CORREO@go.ugr.es por tu correo (y añade otros profesores si hace falta).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+
+    function isTeacher() {
+      return signedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['TU_CORREO@go.ugr.es'];
+    }
+
+    // Puntuación máxima posible: 23 días x 150 + día 24 x 300 = 3750
+    function validScore(d) {
+      return d.puntos is int && d.puntos >= 0 && d.puntos <= 3750
+          && d.puertas is int && d.puertas >= 0 && d.puertas <= 24;
+    }
+
+    // Una ficha por alumno, con el uid de Firebase como identificador
+    match /alumnos/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
+
+      // Al crearla empieza vacía; si entra con Google, el correo tiene que ser el suyo
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.respuestas.size() == 0
+        && request.resource.data.puntos == 0
+        && (!('email' in request.auth.token)
+            || request.resource.data.email == request.auth.token.email.lower());
+
+      // Puede añadir respuestas, pero nunca borrarlas (así no puede repetir días)
+      // ni cambiar su correo
+      allow update: if signedIn() && request.auth.uid == uid
+        && validScore(request.resource.data)
+        && request.resource.data.respuestas.keys().hasAll(resource.data.respuestas.keys())
+        && request.resource.data.email == resource.data.email;
+
+      allow delete: if isTeacher();
+    }
+
+    // Clasificación pública para la clase (solo alias y puntos)
+    match /ranking/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == uid && validScore(request.resource.data);
+      allow delete: if isTeacher();
+    }
+  }
+}

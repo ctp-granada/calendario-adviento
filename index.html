@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendario de Adviento · Bioquímica Enfermería</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --night:#0d1f2a; --night2:#123142; --pine:#1f6b4a; --pine2:#2f8f63; --mint:#bfe8d2;
+  --gold:#f2c14e; --gold2:#ffdf8a; --red:#d6453d; --red2:#ff6b5e; --snow:#f6fbff;
+  --ink:#16323f; --muted:#5d7682; --card:#fffdf7; --ok:#2f9e5f; --ko:#d6453d;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:Nunito,system-ui,sans-serif;color:var(--snow);
+  background:radial-gradient(1200px 700px at 70% -10%,#1d4a5e 0%,transparent 60%),
+             linear-gradient(180deg,var(--night) 0%,var(--night2) 100%);
+  background-attachment:fixed;overflow-x:hidden;
+}
+#snow{position:fixed;inset:0;pointer-events:none;z-index:0}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
+.wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:22px 18px 60px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}
+.brand h1{font-family:Fredoka,sans-serif;font-weight:700;font-size:clamp(26px,4vw,40px);margin:0;line-height:1.05;letter-spacing:.2px}
+.brand h1 span{color:var(--gold)}
+.brand p{margin:4px 0 0;color:var(--mint);font-weight:600;font-size:14px;opacity:.9}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:8px 14px;min-width:92px;text-align:center;backdrop-filter:blur(4px)}
+.stat b{display:block;font-family:Fredoka;font-size:22px;color:var(--gold2)}
+.stat small{font-size:11px;text-transform:uppercase;letter-spacing:.8px;opacity:.75;font-weight:700}
+.stat.fire b{color:#ff9f5a}
+.banner{background:linear-gradient(90deg,rgba(242,193,78,.18),rgba(242,193,78,.05));border:1px solid rgba(242,193,78,.4);border-radius:14px;padding:10px 16px;margin-bottom:16px;font-weight:600;font-size:14px;display:none}
+.banner.show{display:block}
+.layout{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+
+/* ---- tree of doors ---- */
+.board{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:18px 10px 22px;display:flex;justify-content:center;overflow:hidden}
+.xmas{--s:clamp(42px,9.6vw,86px);--g:calc(var(--s)*.16);display:flex;flex-direction:column;align-items:center}
+.crown{position:relative;display:flex;flex-direction:column;align-items:center;gap:calc(var(--s)*.06)}
+.row{position:relative;z-index:1;display:flex;gap:var(--g);justify-content:center}
+.treebg{position:absolute;z-index:0;top:calc(var(--s)*.55);bottom:calc(var(--s)*-.3);left:calc(var(--s)*-.75);right:calc(var(--s)*-.75);
+  background:radial-gradient(circle at 30% 40%,rgba(255,255,255,.07) 0 2px,transparent 3px) 0 0/34px 30px,linear-gradient(180deg,#2f9a68,#1c6646 60%,#17583c);
+  clip-path:polygon(50% 0,63% 19%,57% 19%,72% 40%,65% 40%,84% 64%,76% 64%,100% 100%,0 100%,24% 64%,16% 64%,35% 40%,28% 40%,43% 19%,37% 19%);
+  filter:drop-shadow(0 8px 20px rgba(0,0,0,.35))}
+.garland{position:absolute;z-index:0;left:0;right:0;height:2px}
+.trunk{display:flex;gap:calc(var(--g)*.7);margin-top:calc(var(--s)*.38);position:relative;z-index:1}
+.door{position:relative;width:var(--s);height:var(--s);perspective:700px;cursor:pointer;border:0;background:none;padding:0;font:inherit;color:inherit;flex:none}
+.door:focus-visible{outline:3px solid var(--gold);outline-offset:4px;border-radius:50%}
+.door .inside,.door .front{position:absolute;inset:0;border-radius:50%}
+.door .inside{background:radial-gradient(circle at 50% 35%,#fffaf0,#f1dfb8);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;text-align:center;box-shadow:inset 0 0 0 3px rgba(0,0,0,.08)}
+.door .inside .ic{font-size:calc(var(--s)*.34);line-height:1}
+.door .inside .pt{font-family:Fredoka;font-weight:700;font-size:calc(var(--s)*.15);color:var(--pine)}
+.door .inside .pt.no{color:var(--ko)}
+.door .front{transform-origin:left center;transition:transform .8s cubic-bezier(.3,1.3,.5,1);display:flex;align-items:center;justify-content:center;
+  box-shadow:inset -6px -8px 14px rgba(0,0,0,.25),0 5px 10px rgba(0,0,0,.35)}
+.door .front::before{content:"";position:absolute;left:20%;top:14%;width:30%;height:20%;border-radius:50%;background:rgba(255,255,255,.45);transform:rotate(-25deg)}
+.door .front::after{content:"";position:absolute;left:50%;top:calc(var(--s)*-.1);width:calc(var(--s)*.24);height:calc(var(--s)*.14);transform:translateX(-50%);border-radius:3px 3px 2px 2px;background:linear-gradient(90deg,#b8902f,#ffe08a,#b8902f)}
+.door .num{position:relative;font-family:Fredoka;font-weight:700;font-size:calc(var(--s)*.4);text-shadow:0 2px 0 rgba(0,0,0,.25);color:#fff}
+.c0 .front{background:radial-gradient(circle at 35% 30%,#ff8a7e,#d6453d 60%,#a8302a)}
+.c1 .front{background:radial-gradient(circle at 35% 30%,#ffe7a0,#f2c14e 60%,#c4901d)}
+.c1 .num{color:#5a3a00;text-shadow:none}
+.c2 .front{background:radial-gradient(circle at 35% 30%,#8fd0ff,#3b7fb0 60%,#245a85)}
+.c3 .front{background:radial-gradient(circle at 35% 30%,#ffffff,#d9e4ea 60%,#9fb3bf)}
+.c3 .num{color:#16323f;text-shadow:none}
+.c4 .front{background:radial-gradient(circle at 35% 30%,#e6b3ff,#9b59c9 60%,#6d3796)}
+/* regalos del tronco */
+.door.gift,.door.gift .front,.door.gift .inside{border-radius:10px}
+.door.gift .front{background:linear-gradient(150deg,#c0392b,#8e2a20)!important}
+.door.gift.g1 .front{background:linear-gradient(150deg,#2f8f63,#1f6b4a)!important}
+.door.gift.g2 .front{background:linear-gradient(150deg,#3b7fb0,#245a85)!important}
+.door.gift .front::before{left:42%;top:0;width:16%;height:100%;border-radius:0;transform:none;background:var(--gold)}
+.door.gift .front::after{top:42%;left:0;width:100%;height:16%;transform:none;border-radius:0;background:var(--gold)}
+.door.gift .num{z-index:1;background:rgba(0,0,0,.25);border-radius:8px;padding:0 6px;color:#fff;text-shadow:none}
+/* estrella */
+.door.star{width:calc(var(--s)*1.35);height:calc(var(--s)*1.35);filter:drop-shadow(0 0 10px rgba(242,193,78,.55))}
+.door.star .front,.door.star .inside{border-radius:0;clip-path:polygon(50% 0,61.5% 35%,98% 35%,68.5% 57%,79.5% 91%,50% 70%,20.5% 91%,31.5% 57%,2% 35%,38.5% 35%)}
+.door.star .front{background:radial-gradient(circle at 50% 45%,#fff3b8,#f2c14e 55%,#d99a12);box-shadow:none}
+.door.star .front::before,.door.star .front::after{display:none}
+.door.star .num{color:#5a3a00;text-shadow:none;font-size:calc(var(--s)*.42);margin-top:12%}
+.door.star .inside{padding-top:14%}
+.door.star.lit{filter:drop-shadow(0 0 22px #ffd54a) drop-shadow(0 0 8px #fff3b0);animation:twinkle 1.8s ease-in-out infinite}
+@keyframes twinkle{50%{filter:drop-shadow(0 0 34px #ffd54a) drop-shadow(0 0 12px #fff)}}
+/* estados */
+.door.open .front{transform:rotateY(-110deg)}
+.door.open .num,.door.open .front::before{opacity:0;transition:opacity .2s .25s}
+.door.answered.ok{filter:drop-shadow(0 0 8px rgba(255,223,138,.9))}
+.door.locked .front{filter:saturate(.35) brightness(.72)}
+.door.locked .num{opacity:.85}
+.door.today .front{animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:inset -6px -8px 14px rgba(0,0,0,.25),0 0 0 0 rgba(255,223,138,.9)}50%{box-shadow:inset -6px -8px 14px rgba(0,0,0,.25),0 0 0 calc(var(--s)*.14) rgba(255,223,138,0)}}
+.door.shake{animation:shake .45s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.lock{position:absolute;right:-2px;bottom:-2px;font-size:calc(var(--s)*.22);z-index:2;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4))}
+.door.open .lock{display:none}
+
+/* ---- side ---- */
+.side{display:flex;flex-direction:column;gap:14px}
+.panel{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:14px 16px}
+.panel h3{font-family:Fredoka;margin:0 0 6px;font-size:18px}
+.panel p{margin:0;font-size:13px;opacity:.85}
+#tree{width:100%;height:auto;display:block}
+.orn{transition:all .6s}
+.rank{font-family:Fredoka;color:var(--gold2);font-size:17px}
+.bar{height:10px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),#ff9f5a);width:0;transition:width .8s}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:inherit;font-weight:800;border:0;border-radius:12px;padding:10px 14px;cursor:pointer;transition:transform .12s,filter .2s}
+.btn:active{transform:scale(.96)}
+.btn.gold{background:var(--gold);color:#3b2a00}
+.btn.ghost{background:rgba(255,255,255,.1);color:var(--snow);border:1px solid rgba(255,255,255,.18)}
+.btn.green{background:var(--pine2);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:7px 10px;font-size:12.5px}
+
+/* ---- modal ---- */
+.overlay{position:fixed;inset:0;background:rgba(5,15,22,.72);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:50;padding:14px}
+.overlay.show{display:flex}
+.modal{background:var(--card);color:var(--ink);width:min(680px,100%);max-height:92vh;overflow:auto;border-radius:24px;box-shadow:0 30px 80px rgba(0,0,0,.45);animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.7) rotate(-3deg);opacity:0}to{transform:none;opacity:1}}
+.mhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 20px 10px;border-bottom:2px dashed #eadfc6}
+.dayb{font-family:Fredoka;font-size:15px;background:var(--red);color:#fff;border-radius:99px;padding:4px 12px}
+.typeb{font-size:12px;font-weight:800;color:var(--pine);background:#e2f4ea;border-radius:99px;padding:4px 10px;margin-left:6px}
+.x{background:none;border:0;font-size:26px;cursor:pointer;color:var(--muted);line-height:1}
+.mbody{padding:16px 20px 20px}
+.topic{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+.q{font-size:clamp(17px,2.4vw,20px);font-weight:800;margin:6px 0 14px;line-height:1.35}
+.timer{height:8px;border-radius:99px;background:#efe6d2;overflow:hidden;margin-bottom:4px}
+.timer i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--pine2),var(--gold));transition:width .25s linear}
+.tlabel{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:12px}
+.opts{display:grid;gap:9px}
+.opt{font:inherit;text-align:left;background:#fff;border:2px solid #e6dcc4;border-radius:14px;padding:12px 14px;cursor:pointer;font-weight:700;color:var(--ink);transition:transform .12s,border-color .2s,background .2s;display:flex;gap:10px;align-items:center}
+.opt:hover:not(:disabled){border-color:var(--pine2);transform:translateY(-1px)}
+.opt .l{flex:none;width:28px;height:28px;border-radius:9px;background:#f1ead9;display:grid;place-items:center;font-family:Fredoka;color:var(--pine)}
+.opt.ok{background:#e3f6ea;border-color:var(--ok)}
+.opt.ko{background:#fde8e6;border-color:var(--ko)}
+.opt:disabled{cursor:default}
+.tf{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tf .opt{justify-content:center;font-size:18px;padding:18px}
+.odd{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.odd .opt{flex-direction:column;justify-content:center;text-align:center;min-height:84px}
+.fill{background:#fff;border:2px solid #e6dcc4;border-radius:14px;padding:14px;font-size:17px;font-weight:700;line-height:1.6;margin-bottom:12px}
+.gap{display:inline-block;min-width:110px;border-bottom:3px solid var(--gold);text-align:center;color:var(--pine);padding:0 6px;transition:all .3s}
+.gap.ok{color:var(--ok);border-color:var(--ok)}
+.gap.ko{color:var(--ko);border-color:var(--ko)}
+.chips{display:flex;flex-wrap:wrap;gap:9px}
+.chip{font:inherit;font-weight:800;background:#fff;border:2px solid #e6dcc4;border-radius:99px;padding:9px 14px;cursor:pointer;color:var(--ink)}
+.chip:hover:not(:disabled){border-color:var(--pine2)}
+.chip.used{opacity:.3}
+.olist{display:grid;gap:8px;margin:10px 0;counter-reset:o}
+.oslot{border:2px dashed #d9cdb1;border-radius:12px;padding:10px 12px;min-height:44px;font-weight:700;display:flex;gap:10px;align-items:center;background:#fffaf0}
+.oslot .n{font-family:Fredoka;width:26px;height:26px;border-radius:50%;background:var(--pine);color:#fff;display:grid;place-items:center;flex:none;font-size:14px}
+.oslot.filled{border-style:solid;border-color:var(--pine2);background:#fff;cursor:pointer}
+.oslot.ok{border-color:var(--ok);background:#e3f6ea}
+.oslot.ko{border-color:var(--ko);background:#fde8e6}
+.match{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mcol{display:grid;gap:8px;align-content:start}
+.mi{font:inherit;font-weight:700;font-size:14px;text-align:left;background:#fff;border:2px solid #e6dcc4;border-radius:12px;padding:10px 12px;cursor:pointer;color:var(--ink);position:relative}
+.mi.sel{border-color:var(--gold);box-shadow:0 0 0 3px rgba(242,193,78,.35)}
+.mi .tag{position:absolute;top:-8px;right:-6px;width:22px;height:22px;border-radius:50%;color:#fff;font-size:12px;display:grid;place-items:center;font-family:Fredoka}
+.mi.ok{background:#e3f6ea;border-color:var(--ok)}
+.mi.ko{background:#fde8e6;border-color:var(--ko)}
+.actions{display:flex;justify-content:space-between;gap:10px;margin-top:14px;flex-wrap:wrap}
+.hint{background:#fff6dc;border-left:4px solid var(--gold);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;margin-top:12px;display:none}
+.hint.show{display:block;animation:pop .3s}
+.result{margin-top:14px;border-radius:16px;padding:14px 16px;display:none}
+.result.show{display:block;animation:pop .4s}
+.result.good{background:#e3f6ea;border:2px solid var(--ok)}
+.result.bad{background:#fdecea;border:2px solid var(--ko)}
+.result h4{font-family:Fredoka;margin:0 0 6px;font-size:20px}
+.result .exp{font-size:14.5px;line-height:1.5}
+.result .clin{margin-top:8px;font-size:13.5px;background:rgba(255,255,255,.7);border-radius:10px;padding:8px 10px}
+.result .pts{font-family:Fredoka;font-size:16px;color:var(--pine);margin-top:8px}
+.field{width:100%;font:inherit;font-weight:700;padding:11px 12px;border-radius:12px;border:2px solid #e6dcc4;margin:8px 0 4px}
+.err{color:var(--ko);font-size:13px;font-weight:700;min-height:18px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120px);background:#fff;color:var(--ink);font-weight:800;padding:12px 18px;border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.3);z-index:70;transition:transform .35s cubic-bezier(.2,1.4,.4,1)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.cert{text-align:center}
+.cert .big{font-family:Fredoka;font-size:44px;color:var(--pine)}
+.cert pre{white-space:pre-wrap;text-align:left;background:#f6f0e2;border-radius:12px;padding:12px;font-size:13px}
+.legend{display:flex;gap:12px;font-size:12px;font-weight:700;margin-top:6px;opacity:.85;flex-wrap:wrap}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.legend .a::before{background:var(--gold)} .legend .b::before{background:#8aa4ae} .legend .c::before{background:#2a4a57;border:1px solid #6d8a96}
+footer{margin-top:22px;text-align:center;font-size:12px;opacity:.6}
+#gate{position:fixed;inset:0;z-index:80;background:rgba(5,15,22,.88);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:16px}
+#gate.show{display:flex}
+#gate .modal{max-width:460px}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:10px}
+.who{font-size:12.5px;font-weight:700;opacity:.85;margin-top:8px}
+.rk{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:5px}
+.rk li{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;font-weight:700;background:rgba(255,255,255,.06);border-radius:10px;padding:6px 10px}
+.rk li.me{background:rgba(242,193,78,.22);outline:1px solid rgba(242,193,78,.6)}
+.rk li b{color:var(--gold2);font-family:Fredoka}
+.offline{background:rgba(214,69,61,.2);border:1px solid rgba(214,69,61,.5)}
+</style>
+</head>
+<body>
+<canvas id="snow"></canvas>
+<canvas id="confetti"></canvas>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>Calendario de <span>Adviento</span> 🎄</h1>
+      <p>Bioquímica General · Grado en Enfermería · Un reto cada día del 1 al 24 de diciembre</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="sScore">0</b><small>Puntos</small></div>
+      <div class="stat fire"><b id="sStreak">0🔥</b><small>Racha</small></div>
+      <div class="stat"><b id="sDone">0/24</b><small>Puertas</small></div>
+    </div>
+  </header>
+
+  <div class="banner" id="banner"></div>
+
+  <div class="layout">
+    <section class="board">
+      <div class="xmas" id="grid"></div>
+    </section>
+
+    <aside class="side">
+      <div class="panel" id="rankPanel" style="display:none">
+        <h3>🏆 Clasificación de la clase</h3>
+        <ol class="rk" id="rkList"><li>Cargando…</li></ol>
+        <div class="who" id="who"></div>
+      </div>
+      <div class="panel">
+        <h3>Nivel</h3>
+        <div class="rank" id="rank">Sustrato en espera</div>
+        <div class="bar"><i id="rankBar"></i></div>
+        <p style="margin-top:8px" id="rankNext"></p>
+      </div>
+      <div class="panel">
+        <h3>Cómo se juega</h3>
+        <p>Cada puerta se abre su día. Tienes <b>un intento</b>. La música empieza al primer clic. Ganas 100 puntos por acierto y hasta <b>+50 por rapidez</b>. La pista resta 30. La estrella (día 24) vale el doble.</p>
+        <div class="tools" style="margin-top:10px">
+          <button class="btn ghost sm" id="bName">✏️ Mi nombre</button>
+          <button class="btn ghost sm" id="bTeacher">🎓 Modo profesor</button>
+          <button class="btn ghost sm" id="bMusic">🎵 Música: sí</button>
+          <button class="btn ghost sm" id="bSound">🔊 Efectos</button>
+          <button class="btn ghost sm" id="bReset">↺ Reiniciar</button>
+          <button class="btn ghost sm" id="bLogout" style="display:none">🚪 Salir</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+  <footer>Departamento de Bioquímica y Biología Molecular · Facultad de Ciencias de la Salud · UGR</footer>
+</div>
+
+<div id="gate"><div class="modal" id="gateBox" role="dialog" aria-modal="true"></div></div>
+<div class="overlay" id="ov"><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================== PREGUNTAS ================== */
+const Q = [
+{d:1,type:"fill",topic:"Hidratos de carbono",icon:"🍬",
+ q:"Completa la frase.",text:"El grupo funcional más característico de los monosacáridos es el grupo ___.",
+ opts:["aldehído o cetona","amino","carboxilo","sulfhidrilo","amido"],ans:0,
+ hint:"Según cuál tengan, se clasifican en aldosas o en cetosas.",
+ exp:"Los monosacáridos son polihidroxialdehídos (aldosas, como la glucosa) o polihidroxicetonas (cetosas, como la fructosa).",
+ clin:"El grupo carbonilo de la glucosa es el que reacciona con las proteínas en la glicación: así se forma la HbA1c, que usamos para controlar a los pacientes con diabetes."},
+{d:2,type:"odd",topic:"Disacáridos",icon:"🍯",
+ q:"Encuentra el intruso: ¿cuál de estos disacáridos carece de poder reductor?",
+ opts:["Maltosa","Sacarosa","Lactosa"],ans:1,
+ hint:"Busca el que tiene los dos carbonos anoméricos comprometidos en el enlace.",
+ exp:"En la sacarosa, el enlace α1→β2 une los dos carbonos anoméricos (C1 de la glucosa y C2 de la fructosa), así que no queda ninguno libre. La maltosa y la lactosa conservan un carbono anomérico libre y son reductoras.",
+ clin:"Por eso la sacarosa no da positivo en las pruebas clásicas de azúcares reductores (Benedict o Fehling), que sí detectan glucosa, lactosa o galactosa en la orina."},
+{d:3,type:"mc",topic:"Glucoproteínas",icon:"🧷",
+ q:"Indique la localización preferencial de las glucoproteínas:",
+ opts:["Membrana plasmática","Retículo endoplásmico","Citoplasma","Núcleo","Lisosomas"],ans:0,
+ hint:"Piensa en el glucocálix.",
+ exp:"Las glucoproteínas abundan en la cara externa de la membrana plasmática. Sus oligosacáridos forman el glucocálix y participan en el reconocimiento celular, la adhesión y como receptores.",
+ clin:"Los antígenos de los grupos sanguíneos ABO son oligosacáridos unidos a glucoproteínas y glucolípidos de la membrana del eritrocito."},
+{d:4,type:"mc",topic:"Colesterol",icon:"🧈",last:true,
+ q:"El colesterol:",
+ opts:["Es un componente básico de la membrana de las células animales","Es una molécula anfipática","Es precursor biológico de otros esteroides","Regula la fluidez de la membrana al intercalarse en la misma","Todas las opciones son ciertas"],ans:4,
+ hint:"Repasa cada opción por separado antes de elegir.",
+ exp:"El colesterol tiene un grupo OH polar y un núcleo esteroide hidrófobo (es anfipático), se intercala entre los fosfolípidos regulando la fluidez de la membrana y es precursor de las hormonas esteroideas, los ácidos biliares y la vitamina D.",
+ clin:"Aunque lo asociemos al riesgo cardiovascular, es imprescindible: sin colesterol no habría cortisol, aldosterona ni hormonas sexuales."},
+{d:5,type:"fill",topic:"Lípidos",icon:"🫧",
+ q:"Completa la frase.",text:"Por su estructura, la ceramida se encuadra dentro del grupo de los ___.",
+ opts:["esfingolípidos","fosfoglicéridos","céridos","terpenos","triglicéridos"],ans:0,
+ hint:"Su esqueleto no es el glicerol, sino un aminoalcohol de 18 carbonos.",
+ exp:"La ceramida está formada por esfingosina y un ácido graso unido por enlace amida. Es la base de todos los esfingolípidos: esfingomielina, cerebrósidos y gangliósidos.",
+ clin:"La esfingomielina, que se forma a partir de la ceramida, es muy abundante en la vaina de mielina de las neuronas."},
+{d:6,type:"mc",topic:"Glucolípidos",icon:"🧠",
+ q:"Por hidrólisis de una molécula de gangliósido se producirían:",
+ opts:["Ceramida + oligosacáridos","Ceramida + maltosa","Ceramida + glucosa","Ácido fosfatídico + oligosacáridos","Ceramida + galactosa"],ans:0,
+ hint:"Llevan una cadena de varios azúcares que incluye ácido siálico.",
+ exp:"Los gangliósidos son glucoesfingolípidos: una ceramida unida a un oligosacárido que contiene ácido siálico (NANA).",
+ clin:"En la enfermedad de Tay-Sachs falta la hexosaminidasa A y el gangliósido GM2 se acumula en las neuronas."},
+{d:7,type:"mc",topic:"Hemoglobina",icon:"🩸",
+ q:"¿Influye el pH en el transporte de O₂ por la hemoglobina?",
+ opts:["Sí, su descenso favorece que el O₂ se libere de la hemoglobina en los tejidos","No, porque la presión de oxígeno en los pulmones es muy grande","No, porque el CO₂ es liberado en los pulmones","Sí, favorece que el 2,3-bisfosfoglicerato se libere de la hemoglobina en los tejidos","Solo influye si la presión parcial de oxígeno supera un umbral"],ans:0,
+ hint:"Es el efecto Bohr.",
+ exp:"Efecto Bohr: cuando baja el pH (más H⁺, como en los tejidos activos), la hemoglobina pierde afinidad por el O₂ y lo libera. En el pulmón ocurre lo contrario y la hemoglobina se carga de O₂.",
+ clin:"En el músculo en ejercicio, que está más ácido, la hemoglobina cede más O₂ justo donde se necesita."},
+{d:8,type:"mc",topic:"Aminoácidos",icon:"🛡️",
+ q:"Los efectos del glutatión como agente antioxidante dependen fundamentalmente del grupo funcional de un aminoácido. ¿De cuál?",
+ opts:["Cisteína","Metionina","Glutamato","Glicina","Alanina"],ans:0,
+ hint:"Busca el aminoácido que tiene un grupo sulfhidrilo (–SH) libre.",
+ exp:"El glutatión (γ-Glu-Cys-Gly) actúa gracias al grupo tiol (–SH) de la cisteína: dos moléculas de GSH se oxidan a GSSG al neutralizar peróxidos, y la glutatión reductasa lo regenera usando NADPH.",
+ clin:"En la intoxicación por paracetamol se agota el glutatión del hígado. El antídoto, la N-acetilcisteína, aporta cisteína para reponerlo."},
+{d:9,type:"odd",topic:"Regulación enzimática",icon:"⚙️",
+ q:"Encuentra el intruso: ¿qué afirmación NO es característica de la regulación enzimática por fosforilación/desfosforilación?",
+ opts:["El dador de fosfatos es el ATP","Se produce en respuesta a una señal hormonal","La fosforilación siempre activa a la enzima","La fosforilación se produce sobre algún grupo –OH de la proteína","La unión covalente del fosfato produce un cambio de conformación"],ans:2,
+ hint:"Piensa en lo que hace la PKA a la glucógeno sintasa y a la glucógeno fosforilasa.",
+ exp:"La fosforilación puede activar o inhibir: activa la glucógeno fosforilasa pero inhibe la glucógeno sintasa. Todo lo demás sí es cierto: el ATP dona el fosfato, se une al –OH de una serina, treonina o tirosina, responde a hormonas y cambia la conformación de la enzima.",
+ clin:"Por eso el glucagón, con una sola cascada de PKA, frena a la vez la síntesis de glucógeno y activa su degradación."},
+{d:10,type:"mc",topic:"Señalización",icon:"⚡",
+ q:"Los efectos de la acetilcolina sobre el canal iónico postsináptico se deben principalmente a:",
+ opts:["Cambios en la conformación del receptor","Fosforilación de proteínas","Síntesis de nucleótidos cíclicos","Escisión de proteínas","Síntesis de proteínas"],ans:0,
+ hint:"Es un receptor ionotrópico: rápido y sin segundos mensajeros.",
+ exp:"El receptor nicotínico de acetilcolina es a la vez un canal iónico. Al unirse la acetilcolina, el receptor cambia de conformación y el canal se abre, sin necesidad de segundos mensajeros.",
+ clin:"En la miastenia gravis hay anticuerpos contra este receptor en la placa motora. Se trata con inhibidores de la acetilcolinesterasa, como la piridostigmina."},
+{d:11,type:"fill",topic:"Bioenergética",icon:"🔋",
+ q:"Completa la frase.",text:"La energía liberada en la oxidación de la glucosa se almacena en forma de ___.",
+ opts:["ATP","ADP","NAD","FAD","GDP"],ans:0,
+ hint:"Es la «moneda energética» de la célula.",
+ exp:"La energía se conserva en los enlaces fosfoanhídrido del ATP. El NAD y el FAD son transportadores de electrones intermedios, no la forma de almacenar la energía.",
+ clin:"En la isquemia cae la producción de ATP, fallan las bombas Na⁺/K⁺ y la célula se hincha (edema celular)."},
+{d:12,type:"mc",topic:"Vía de las pentosas fosfato",icon:"🧪",last:true,
+ q:"De los siguientes compuestos, ¿cuál se obtiene en la fase oxidativa de la vía de las pentosas fosfato?",
+ opts:["6-fosfogluconato","Eritrosa-4-fosfato","Sedoheptulosa-7-fosfato","Ribosa-5-fosfato","Ninguna de las anteriores"],ans:0,
+ hint:"La primera enzima de la vía es la glucosa-6-fosfato deshidrogenasa.",
+ exp:"En la fase oxidativa, la G6PD oxida la glucosa-6-fosfato a 6-fosfogluconolactona, que se hidroliza a 6-fosfogluconato. Este se descarboxila a ribulosa-5-fosfato. En total se generan 2 NADPH. La eritrosa-4-P y la sedoheptulosa-7-P pertenecen a la fase no oxidativa.",
+ clin:"Esta fase es la principal fuente de NADPH del eritrocito. Por eso el déficit de G6PD causa crisis hemolíticas tras comer habas o tomar ciertos fármacos."},
+{d:13,type:"fill",topic:"Glucólisis anaerobia",icon:"🏃",
+ q:"Completa la frase.",text:"En el ser humano, el destino catabólico del piruvato en condiciones anaeróbicas es la ___.",
+ opts:["fermentación láctica","fermentación málica","descarboxilación oxidativa","gluconeogénesis","fermentación alcohólica"],ans:0,
+ hint:"Ocurre en el músculo durante un sprint.",
+ exp:"La lactato deshidrogenasa reduce el piruvato a lactato y regenera el NAD⁺ que necesita la glucólisis para continuar. La fermentación alcohólica es propia de las levaduras, no de los humanos.",
+ clin:"En el shock o la sepsis, la mala perfusión de los tejidos eleva el lactato en sangre: es un marcador de gravedad."},
+{d:14,type:"mc",topic:"Metabolismo del glucógeno",icon:"🍞",
+ q:"El proceso de glucogenogénesis tiene lugar en…",
+ opts:["El hígado y el músculo tras una ingesta rica en hidratos de carbono","El hígado y el músculo en condiciones de ayuno prolongado","El hígado y el cerebro en condiciones de ayuno prolongado","El tejido adiposo y el músculo en condiciones de ayuno prolongado","El tejido adiposo y el cerebro en condiciones de ayuno prolongado"],ans:0,
+ hint:"«Génesis»: se fabrica cuando sobra glucosa.",
+ exp:"Tras una comida rica en hidratos de carbono, la insulina activa la glucógeno sintasa en el hígado y el músculo, que almacenan la glucosa sobrante como glucógeno. En ayunas ocurre lo contrario (glucogenólisis).",
+ clin:"El glucógeno hepático mantiene la glucemia durante unas 12–24 h de ayuno. El muscular solo lo aprovecha el propio músculo, porque no tiene glucosa-6-fosfatasa."},
+{d:15,type:"mc",topic:"Cadena respiratoria",icon:"🔥",last:true,
+ q:"Mediante la cadena transportadora de electrones y la fosforilación oxidativa, la reducción de NADH y FADH₂ genera:",
+ opts:["1,5 y 2,5 moléculas de ATP respectivamente","1,5 y 2,5 moléculas de GTP respectivamente","2,5 y 1,5 moléculas de ATP respectivamente","2,5 y 1,5 moléculas de GTP respectivamente","Ninguna de las anteriores es verdadera"],ans:4,
+ hint:"Lee con lupa el verbo del enunciado: ¿qué les pasa al NADH y al FADH₂ en la cadena?",
+ exp:"¡Ojo a la trampa! En la cadena respiratoria, el NADH y el FADH₂ no se reducen, sino que se oxidan (ceden sus electrones). Su oxidación rinde unos 2,5 ATP por NADH y 1,5 por FADH₂, pero tal como está escrita la frase, ninguna opción es verdadera.",
+ clin:"El FADH₂ rinde menos ATP porque cede sus electrones al complejo II, que no bombea protones."},
+{d:16,type:"fill",topic:"β-oxidación",icon:"✂️",
+ q:"Completa la frase.",text:"La β-oxidación del ácido hexadecanoico (ácido palmítico) produce ___ moléculas de acetil-CoA.",
+ opts:["4","8","12","16","18"],ans:1,
+ hint:"16 carbonos, y cada acetil-CoA se lleva 2.",
+ exp:"El palmítico tiene 16 C y cada vuelta de β-oxidación libera 2 C como acetil-CoA: 7 vueltas dan 8 acetil-CoA, además de 7 FADH₂ y 7 NADH.",
+ clin:"Ese rendimiento (unos 106 ATP netos por palmítico) explica por qué la grasa es nuestra reserva de energía más eficiente."},
+{d:17,type:"mc",topic:"Lipólisis",icon:"🥓",
+ q:"La triacilglicerol lipasa está activada por:",
+ opts:["Fosforilación por PKA","Desfosforilación por PKA","Fosforilación por PKB","Desfosforilación por PKB","Todas son correctas"],ans:0,last:true,
+ hint:"La activa la cascada del AMPc.",
+ exp:"En ayunas o en situaciones de estrés, el glucagón y la adrenalina elevan el AMPc, que activa la PKA. La PKA fosforila la lipasa sensible a hormonas y la activa, y se liberan ácidos grasos. La insulina hace lo contrario: a través de la PKB activa la fosfodiesterasa y baja el AMPc.",
+ clin:"Por eso, sin insulina (diabetes tipo 1 descompensada), la lipólisis se dispara y aparecen los cuerpos cetónicos."},
+{d:18,type:"tf",topic:"Ayuno",icon:"🌙",
+ q:"El combustible principal del cerebro en caso de ayuno muy prolongado son los cuerpos cetónicos.",
+ ans:true,hint:"Así se ahorra la proteína muscular que, si no, se gastaría en gluconeogénesis.",
+ exp:"Verdadero. Tras varios días de ayuno, el cerebro se adapta y obtiene la mayor parte de su energía de los cuerpos cetónicos, con lo que necesita mucha menos glucosa. Los ácidos grasos, en cambio, apenas cruzan la barrera hematoencefálica.",
+ clin:"El eritrocito no tiene mitocondrias y no puede usar cuerpos cetónicos: sigue dependiendo de la glucosa."},
+{d:19,type:"mc",topic:"Regulación de los lípidos",icon:"🚦",
+ q:"La lanzadera de ácidos grasos (lanzadera de carnitina) es inhibida por:",
+ opts:["Malonil-CoA","Glucosa","Piruvato","Represión génica","Nunca se inhibe"],ans:0,
+ hint:"Es el primer intermediario de la síntesis de ácidos grasos.",
+ exp:"El malonil-CoA inhibe la carnitina palmitoil transferasa I. Así, mientras la célula fabrica ácidos grasos, estos no entran en la mitocondria para oxidarse, y se evita un ciclo inútil.",
+ clin:"Los déficits de carnitina o de CPT causan debilidad o dolor muscular con el ejercicio e hipoglucemia en ayunas, porque el músculo y el hígado no pueden oxidar ácidos grasos."},
+{d:20,type:"mc",topic:"Coenzimas",icon:"💊",
+ q:"¿Cuál es el grupo prostético requerido para la síntesis de malonil-CoA?",
+ opts:["Biotina","Hemo","FAD","NAD","TPP"],ans:0,
+ hint:"Es la vitamina B₇ de las carboxilasas.",
+ exp:"La acetil-CoA carboxilasa usa biotina como grupo prostético para carboxilar el acetil-CoA a malonil-CoA, gastando ATP y HCO₃⁻.",
+ clin:"La avidina de la clara de huevo cruda se une a la biotina. Un consumo muy alto de clara cruda puede llegar a provocar un déficit."},
+{d:21,type:"mc",topic:"Síntesis de ácidos grasos",icon:"🏗️",
+ q:"¿Cuál es el consumo neto de la síntesis de una molécula de palmítico a partir de acetil-CoA citosólico?",
+ opts:["8 acetil-CoA, 7 ATP, 7 CO₂ y 14 NADPH","8 malonil-CoA, 8 ATP y 16 NADPH","4 acetil-CoA, 4 malonil-CoA, 4 CO₂ y 16 NADPH","1 acetil-CoA, 8 malonil-CoA y 14 NADPH","8 acetil-CoA, 8 CO₂, 8 ATP y 8 NADPH"],ans:0,
+ hint:"7 vueltas de elongación y 2 NADPH por vuelta.",
+ exp:"Se necesitan 8 acetil-CoA: 1 entra como cebador y 7 se carboxilan a malonil-CoA (7 ATP). Cada una de las 7 vueltas gasta 2 NADPH (14 en total) y libera el CO₂ que se había añadido al carboxilar.",
+ clin:"El NADPH procede sobre todo de la vía de las pentosas fosfato y de la enzima málica. Por eso el hígado activa ambas después de comer."},
+{d:22,type:"mc",topic:"Colesterol y fármacos",icon:"💉",
+ q:"¿Cuál es la enzima limitante que regula la biosíntesis del colesterol y sobre la que actúan las estatinas para bloquear su síntesis?",
+ opts:["HMG-CoA reductasa","HMG-CoA sintasa","HMG-CoA oxidasa","HMG-CoA liasa","HMG-CoA quinasa"],ans:0,
+ hint:"Es la enzima que fabrica mevalonato.",
+ exp:"La HMG-CoA reductasa convierte el HMG-CoA en mevalonato y es el paso limitante de la síntesis de colesterol. Al inhibirla, el hepatocito fabrica menos colesterol y capta más LDL de la sangre.",
+ clin:"Un efecto adverso que hay que vigilar es la miopatía: ante dolor muscular se mide la CK."},
+{d:23,type:"mc",topic:"Regulación hormonal",icon:"🎛️",
+ q:"De las siguientes afirmaciones, hay una que es verdadera:",
+ opts:["La insulina activa la síntesis del glucógeno, mientras que la adrenalina y el glucagón inhiben su síntesis","La insulina favorece la síntesis del glucógeno, lo mismo que la adrenalina","La insulina inhibe la síntesis del glucógeno, lo mismo que la adrenalina","La insulina y la adrenalina activan la síntesis del glucógeno, mientras que el glucagón la inhibe","La insulina inhibe la síntesis del glucógeno, mientras que la adrenalina y el glucagón activan su síntesis"],ans:0,
+ hint:"La insulina almacena; las hormonas del estrés movilizan.",
+ exp:"La insulina activa la glucógeno sintasa (por desfosforilación). El glucagón (en el hígado) y la adrenalina (en el hígado y el músculo) la fosforilan a través de la PKA, con lo que inhiben la síntesis y activan la degradación del glucógeno.",
+ clin:"Por eso en una hipoglucemia grave se puede administrar glucagón: moviliza el glucógeno del hígado y sube la glucemia."},
+{d:24,type:"order",topic:"Reto final de Nochebuena",icon:"⭐",special:true,
+ q:"Último reto: ordena las etapas de la oxidación completa de la glucosa.",
+ items:["Glucólisis (citosol)","Descarboxilación oxidativa del piruvato","Ciclo de Krebs","Cadena respiratoria y fosforilación oxidativa"],
+ hint:"Empieza en el citosol y termina en la membrana mitocondrial interna.",
+ exp:"Glucosa → piruvato (glucólisis) → acetil-CoA (piruvato deshidrogenasa) → CO₂ + NADH/FADH₂ (ciclo de Krebs) → los electrones llegan al O₂ en la cadena respiratoria, que genera la mayor parte del ATP.",
+ clin:"¡Muy feliz Navidad! 🎄 Gracias por acompañarnos en este calendario. Descansad y volved con energía… en forma de ATP."}
+];
+const TYPE_LABEL={mc:"Elige la respuesta",tf:"Verdadero o falso",order:"Ordena",match:"Empareja",odd:"Busca el intruso",fill:"Completa"};
+const TEACHER_CODE="UGR2026";
+const TIME=45;
+const ROWS=[[24],[7,15],[3,19,11],[22,1,13,9],[17,5,20,2,14],[10,23,6,18,4,12]];
+const TRUNK=[8,16,21];
+const KEY="adviento-bq-enf-2026-v2";
+
+/* ================== ESTADO ================== */
+let S={answers:{},streak:0,best:0,name:"",teacher:false,sound:true,music:true};
+try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
+  if(window.FB&&FB.ready)FB.push(S).then(refreshRanking).catch(e=>{console.error(e);toast("⚠️ No se pudo guardar en el servidor. Revisa tu conexión.");});}
+
+/* ================== FECHA ================== */
+function unlockedUpTo(){
+  if(S.teacher) return 24;
+  const n=new Date(); const y=n.getFullYear(), m=n.getMonth(), d=n.getDate();
+  if(m===11) return Math.min(d,24);
+  if(m===0) return 24; // en enero quedan todas abiertas para repasar
+  return 0;
+}
+function todayNum(){const n=new Date();return n.getMonth()===11&&n.getDate()<=24?n.getDate():0;}
+
+/* ================== UTIL ================== */
+const $=s=>document.querySelector(s);
+function rng(seed){return()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646;}}
+function shuffle(arr,seed){const r=rng(seed*97+13),a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  if(a.length>1&&a.every((x,i)=>x===arr[i])){a.push(a.shift());} return a;}
+function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("show"),2400);}
+function totalScore(){return Object.values(S.answers).reduce((a,b)=>a+b.points,0);}
+const MAX=23*150+300;
+
+/* ================== SONIDO ================== */
+let AC=null;
+function tone(seq){if(!S.sound)return;try{getAC();
+  let t=AC.currentTime;seq.forEach(([f,d])=>{const o=AC.createOscillator(),g=AC.createGain();o.type="triangle";o.frequency.value=f;
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d+.02);t+=d*.8;});}catch(e){}}
+const sfx={open:()=>tone([[660,.12],[880,.18]]),ok:()=>tone([[784,.12],[988,.12],[1175,.12],[1568,.3]]),ko:()=>tone([[330,.2],[247,.35]]),tick:()=>tone([[1200,.05]])};
+
+/* ================== TABLERO ================== */
+function doorEl(d,cls){
+  const q=Q[d-1],a=S.answers[d],up=unlockedUpTo(),td=todayNum();
+  const b=document.createElement("button");
+  b.className="door "+cls+(a?" open answered "+(a.correct?"ok":"no"):"")+(d>up?" locked":"")+(d===td&&!a?" today":"");
+  if(d===24&&Object.keys(S.answers).length===24)b.classList.add("lit");
+  b.setAttribute("aria-label","Día "+d+(a?(a.correct?", acertado":", fallado"):d>up?", bloqueado":", disponible"));
+  b.title=a?q.topic:(d>up?"Se abre el "+d+" de diciembre":"Día "+d);
+  b.innerHTML=`<div class="inside">${a?`<div class="ic">${a.correct?q.icon:"❄️"}</div><div class="pt ${a.correct?"":"no"}">${a.points}</div>`:""}</div>
+    <div class="front"><span class="num">${d}</span></div>${d>up&&!a?'<span class="lock">🔒</span>':""}`;
+  b.onclick=()=>clickDoor(d,b);
+  return b;
+}
+function renderGrid(){
+  const g=$("#grid");g.innerHTML="";
+  const crown=document.createElement("div");crown.className="crown";
+  crown.innerHTML='<div class="treebg"></div>';
+  let k=0;
+  ROWS.forEach((r,ri)=>{const row=document.createElement("div");row.className="row";
+    r.forEach(d=>{row.appendChild(doorEl(d,d===24?"star special":"c"+(k++%5)));});crown.appendChild(row);});
+  const trunk=document.createElement("div");trunk.className="trunk";
+  TRUNK.forEach((d,i)=>trunk.appendChild(doorEl(d,"gift g"+i)));
+  g.appendChild(crown);g.appendChild(trunk);
+  updateStats();
+}
+function clickDoor(d,el){
+  const up=unlockedUpTo();
+  if(d>up){el.classList.remove("shake");void el.offsetWidth;el.classList.add("shake");sfx.ko();
+    toast(up===0?`🔒 Las puertas empiezan a abrirse el 1 de diciembre`:`🔒 Esta puerta se abre el ${d} de diciembre`);return;}
+  if(S.answers[d]){openQuestion(d,true);return;}
+  el.classList.add("open");sfx.open();
+  setTimeout(()=>openQuestion(d,false),550);
+}
+
+/* ================== STATS / RANGOS ================== */
+const RANKS=[[0,"Sustrato en espera"],[400,"Coenzima en prácticas"],[1000,"Enzima activada"],[1800,"Catalizador experto"],[2700,"Maestra/o del metabolismo"],[3400,"Premio Nobel navideño"]];
+function updateStats(){
+  const sc=totalScore(),done=Object.keys(S.answers).length;
+  $("#sScore").textContent=sc;$("#sStreak").textContent=S.streak+"🔥";$("#sDone").textContent=done+"/24";
+  let ri=0;RANKS.forEach((r,i)=>{if(sc>=r[0])ri=i;});
+  $("#rank").textContent=RANKS[ri][1];
+  const next=RANKS[ri+1];
+  if(next){const pc=(sc-RANKS[ri][0])/(next[0]-RANKS[ri][0])*100;$("#rankBar").style.width=pc+"%";$("#rankNext").textContent=`Te faltan ${next[0]-sc} puntos para «${next[1]}».`;}
+  else{$("#rankBar").style.width="100%";$("#rankNext").textContent="¡Nivel máximo!";}
+  const up=unlockedUpTo(),bn=$("#banner");
+  if(S.teacher){bn.innerHTML="🎓 <b>Modo profesor activo:</b> todas las puertas están abiertas para revisar o proyectar en clase. Desactívalo con el mismo botón.";bn.classList.add("show");}
+  else if(up===0){const n=new Date(),dec=new Date(n.getFullYear(),11,1);const days=Math.ceil((dec-n)/864e5);
+    bn.innerHTML=`⏳ Faltan <b>${days} días</b> para abrir la primera puerta. ¡Ve repasando el tema de pH y tampones!`;bn.classList.add("show");}
+  else if(done===24){bn.innerHTML=`🌟 ¡Calendario completado! <a href="#" id="showCert" style="color:var(--gold2);font-weight:800">Ver mi diploma</a>`;bn.classList.add("show");
+    setTimeout(()=>{const a=$("#showCert");if(a)a.onclick=e=>{e.preventDefault();showCert();};});}
+  else{const pend=[];for(let i=1;i<=up;i++)if(!S.answers[i])pend.push(i);
+    if(pend.length>1){bn.innerHTML=`📬 Tienes <b>${pend.length} puertas</b> pendientes (días ${pend.join(", ")}). ¡Aún puedes abrirlas!`;bn.classList.add("show");}
+    else bn.classList.remove("show");}
+}
+
+/* ================== MODAL PREGUNTA ================== */
+let cur=null;
+function closeModal(){$("#ov").classList.remove("show");if(cur&&cur.timer)clearInterval(cur.timer);cur=null;renderGrid();}
+$("#ov").addEventListener("click",e=>{if(e.target.id==="ov")closeModal();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("#ov").classList.contains("show"))closeModal();});
+
+function openQuestion(d,review){
+  const q=Q[d-1];
+  cur={d,q,review,start:Date.now(),hint:false,done:false,state:{}};
+  const m=$("#modal");
+  m.innerHTML=`<div class="mhead"><div><span class="dayb">${q.special?"⭐ ":""}${d} de diciembre</span><span class="typeb">${TYPE_LABEL[q.type]}</span></div>
+    <button class="x" aria-label="Cerrar" onclick="closeModal()">×</button></div>
+    <div class="mbody">
+      <div class="topic">${q.icon} ${q.topic}${q.special?" · vale el doble":""}</div>
+      <div class="q">${q.q}</div>
+      ${review?"":`<div class="timer"><i id="tbar"></i></div><div class="tlabel"><span>⚡ Bonus de rapidez</span><span id="tbonus">+50</span></div>`}
+      <div id="area"></div>
+      <div class="hint" id="hint">💡 ${q.hint}</div>
+      <div class="actions" id="acts"></div>
+      <div class="result" id="res"></div>
+    </div>`;
+  $("#ov").classList.add("show");
+  const acts=$("#acts");
+  if(!review){
+    acts.innerHTML=`<button class="btn ghost" id="bHint" style="background:#f3ecdc;color:var(--ink);border:0">💡 Pista (−30)</button>
+      ${["order","match"].includes(q.type)?`<button class="btn green" id="bCheck" disabled>Comprobar</button>`:""}`;
+    $("#bHint").onclick=()=>{cur.hint=true;$("#hint").classList.add("show");$("#bHint").disabled=true;};
+    if($("#bCheck"))$("#bCheck").onclick=()=>CHECK[q.type](q);
+    cur.timer=setInterval(()=>{const el=(Date.now()-cur.start)/1000,f=Math.max(0,1-el/TIME);
+      const tb=$("#tbar");if(!tb)return;tb.style.width=(f*100)+"%";$("#tbonus").textContent="+"+Math.round(50*f);},250);
+  }
+  RENDER[q.type](q,$("#area"));
+  if(review){
+    reveal(q,S.answers[d].correct,S.answers[d].points,true);
+  }
+}
+
+function finish(q,fraction,detailOk){
+  if(cur.done)return;cur.done=true;clearInterval(cur.timer);
+  const el=(Date.now()-cur.start)/1000,bonus=Math.round(50*Math.max(0,1-el/TIME));
+  let pts=Math.round(100*fraction+bonus*fraction-(cur.hint?30:0));pts=Math.max(0,pts);if(q.special)pts*=2;
+  const correct=fraction===1;
+  S.answers[q.d]={correct,points:pts,t:Date.now()};
+  if(correct){S.streak++;S.best=Math.max(S.best,S.streak);}else S.streak=0;
+  save();
+  if(correct){sfx.ok();confetti(q.special?260:140);}else sfx.ko();
+  const b=$("#bHint");if(b)b.disabled=true;const c=$("#bCheck");if(c)c.disabled=true;
+  reveal(q,correct,pts,false,fraction);
+  updateStats();
+  if(Object.keys(S.answers).length===24)setTimeout(()=>{closeModal();showCert();},2600);
+}
+
+function reveal(q,correct,pts,review,fraction){
+  if(review)showSolution(q);
+  const r=$("#res");
+  const msgsOk=["¡Bravo! 🎉","¡Exacto! ✨","¡Reacción completada! ⚗️","¡Sin inhibidores! 💪","¡Catalizado! 🚀"];
+  const msgsKo=["Casi… ❄️","¡Uy! Repasemos 📖","Este se resiste 🧊"];
+  const title=q.special&&correct?"¡Muy feliz Navidad! 🎄":correct?msgsOk[q.d%msgsOk.length]:(fraction&&fraction>0?`Parcialmente correcto (${Math.round(fraction*100)} %)`:msgsKo[q.d%msgsKo.length]);
+  r.className="result show "+(correct?"good":"bad");
+  r.innerHTML=`<h4>${title}</h4><div class="exp">${q.exp}</div><div class="clin">${q.special?"🎁":"🩺 <b>En la práctica enfermera:</b>"} ${q.clin}</div>
+    <div class="pts">${correct?"+":""}${pts} puntos${S.streak>1&&correct&&!review?` · racha de ${S.streak} 🔥`:""}</div>
+    <div style="margin-top:10px;text-align:right"><button class="btn gold" onclick="closeModal()">Cerrar puerta</button></div>`;
+  $("#acts").style.display=review?"none":"";
+}
+
+/* ---------- render por tipo ---------- */
+const L="ABCDE";
+function optOrder(q){const idx=q.opts.map((_,i)=>i);if(q.last){const l=idx.pop();return shuffle(idx,q.d+7).concat(l);}return shuffle(idx,q.d+7);}
+const RENDER={
+ mc(q,a){a.innerHTML=`<div class="opts">${optOrder(q).map((i,k)=>`<button class="opt" data-i="${i}"><span class="l">${L[k]}</span>${q.opts[i]}</button>`).join("")}</div>`;
+   if(!cur.review)a.querySelectorAll(".opt").forEach(b=>b.onclick=()=>pickSimple(q,+b.dataset.i,a));},
+ odd(q,a){a.innerHTML=`<div class="odd">${q.opts.map((o,i)=>`<button class="opt" data-i="${i}"><span style="font-size:22px">🎁</span>${o}</button>`).join("")}</div>`;
+   if(!cur.review)a.querySelectorAll(".opt").forEach(b=>b.onclick=()=>pickSimple(q,+b.dataset.i,a));},
+ tf(q,a){a.innerHTML=`<div class="tf"><button class="opt" data-v="1">✅ Verdadero</button><button class="opt" data-v="0">❌ Falso</button></div>`;
+   if(!cur.review)a.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{const v=b.dataset.v==="1";
+     a.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if((x.dataset.v==="1")===q.ans)x.classList.add("ok");});
+     if(v!==q.ans)b.classList.add("ko");finish(q,v===q.ans?1:0);});},
+ fill(q,a){const parts=q.text.split("___");
+   a.innerHTML=`<div class="fill">${parts[0]}<span class="gap" id="gap">&nbsp;?&nbsp;</span>${parts[1]}</div>
+     <div class="chips">${shuffle(q.opts.map((o,i)=>i),q.d).map(i=>`<button class="chip" data-i="${i}">${q.opts[i]}</button>`).join("")}</div>`;
+   if(!cur.review)a.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{const i=+b.dataset.i,g=$("#gap");
+     g.textContent=q.opts[i];a.querySelectorAll(".chip").forEach(x=>{x.disabled=true;x.classList.add("used");});
+     const ok=i===q.ans;g.classList.add(ok?"ok":"ko");if(!ok)g.innerHTML=`<s>${q.opts[i]}</s> → ${q.opts[q.ans]}`;finish(q,ok?1:0);});},
+ order(q,a){const sh=shuffle(q.items.map((_,i)=>i),q.d);cur.state.seq=[];
+   a.innerHTML=`<div style="font-size:13px;font-weight:700;color:var(--muted)">Toca los elementos en el orden correcto. Toca uno ya colocado para quitarlo.</div>
+     <div class="olist" id="olist">${q.items.map((_,k)=>`<div class="oslot" data-k="${k}"><span class="n">${k+1}</span><span class="t"></span></div>`).join("")}</div>
+     <div class="chips" id="opool">${sh.map(i=>`<button class="chip" data-i="${i}">${q.items[i]}</button>`).join("")}</div>`;
+   if(cur.review)return;
+   const draw=()=>{const seq=cur.state.seq;a.querySelectorAll(".oslot").forEach((s,k)=>{const v=seq[k];s.classList.toggle("filled",v!==undefined);s.querySelector(".t").textContent=v!==undefined?q.items[v]:"";});
+     a.querySelectorAll("#opool .chip").forEach(c=>{const u=seq.includes(+c.dataset.i);c.classList.toggle("used",u);c.disabled=u;});
+     {const bc=$("#bCheck");if(bc)bc.disabled=seq.length!==q.items.length;}};
+   a.querySelectorAll("#opool .chip").forEach(c=>c.onclick=()=>{cur.state.seq.push(+c.dataset.i);sfx.tick();draw();});
+   a.querySelectorAll(".oslot").forEach(s=>s.onclick=()=>{if(cur.done)return;const k=+s.dataset.k;if(cur.state.seq[k]!==undefined){cur.state.seq.splice(k,1);draw();}});},
+ match(q,a){const rs=shuffle(q.pairs.map((_,i)=>i),q.d+3);cur.state.map={};cur.state.sel=null;
+   const COLS=["#d6453d","#2f8f63","#245a85","#c47f1b","#8a4fbf"];
+   a.innerHTML=`<div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px">Toca un elemento de la izquierda y después su pareja de la derecha.</div>
+     <div class="match"><div class="mcol" id="mL">${q.pairs.map((p,i)=>`<button class="mi" data-i="${i}">${p[0]}</button>`).join("")}</div>
+     <div class="mcol" id="mR">${rs.map(j=>`<button class="mi" data-j="${j}">${q.pairs[j][1]}</button>`).join("")}</div></div>`;
+   if(cur.review)return;
+   const draw=()=>{const mp=cur.state.map;
+     a.querySelectorAll("#mL .mi").forEach(b=>{const i=+b.dataset.i;b.classList.toggle("sel",cur.state.sel===i);
+       b.innerHTML=q.pairs[i][0]+(mp[i]!==undefined?`<span class="tag" style="background:${COLS[i%5]}">${i+1}</span>`:"");});
+     a.querySelectorAll("#mR .mi").forEach(b=>{const j=+b.dataset.j;const owner=Object.keys(mp).find(k=>mp[k]===j);
+       b.innerHTML=q.pairs[j][1]+(owner!==undefined?`<span class="tag" style="background:${COLS[owner%5]}">${+owner+1}</span>`:"");});
+     {const bc=$("#bCheck");if(bc)bc.disabled=Object.keys(mp).length!==q.pairs.length;}};
+   a.querySelectorAll("#mL .mi").forEach(b=>b.onclick=()=>{if(cur.done)return;cur.state.sel=+b.dataset.i;sfx.tick();draw();});
+   a.querySelectorAll("#mR .mi").forEach(b=>b.onclick=()=>{if(cur.done)return;const s=cur.state.sel;if(s===null){toast("Primero elige un elemento de la izquierda");return;}
+     const j=+b.dataset.j;for(const k in cur.state.map)if(cur.state.map[k]===j)delete cur.state.map[k];
+     cur.state.map[s]=j;const next=q.pairs.findIndex((_,i)=>cur.state.map[i]===undefined);cur.state.sel=next>=0?next:null;sfx.tick();draw();});
+   cur.state.sel=0;draw();}
+};
+function pickSimple(q,i,a){a.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if(+x.dataset.i===q.ans)x.classList.add("ok");});
+  if(i!==q.ans)a.querySelector(`.opt[data-i="${i}"]`).classList.add("ko");finish(q,i===q.ans?1:0);}
+const CHECK={
+ order(q){const seq=cur.state.seq;let ok=0;$("#area").querySelectorAll(".oslot").forEach((s,k)=>{const good=seq[k]===k;if(good)ok++;s.classList.add(good?"ok":"ko");
+     if(!good)s.querySelector(".t").innerHTML=`<s style="opacity:.6">${q.items[seq[k]]}</s><br>→ ${q.items[k]}`;});
+   finish(q,ok/q.items.length);},
+ match(q){const mp=cur.state.map;let ok=0;$("#area").querySelectorAll("#mL .mi").forEach(b=>{const i=+b.dataset.i,good=mp[i]===i;if(good)ok++;b.classList.add(good?"ok":"ko");
+     if(!good)b.innerHTML=`${q.pairs[i][0]}<br><small style="color:var(--ok)">→ ${q.pairs[i][1]}</small>`;});
+   finish(q,ok/q.pairs.length);}
+};
+function showSolution(q){const a=$("#area");
+  if(q.type==="mc"||q.type==="odd")a.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if(+x.dataset.i===q.ans)x.classList.add("ok");});
+  if(q.type==="tf")a.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if((x.dataset.v==="1")===q.ans)x.classList.add("ok");});
+  if(q.type==="fill"){const g=$("#gap");g.textContent=q.opts[q.ans];g.classList.add("ok");a.querySelectorAll(".chip").forEach(x=>{x.disabled=true;x.classList.add("used");});}
+  if(q.type==="order"){a.querySelectorAll(".oslot").forEach((s,k)=>{s.classList.add("ok");s.querySelector(".t").textContent=q.items[k];});$("#opool").style.display="none";}
+  if(q.type==="match"){$("#mR").style.display="none";a.querySelector(".match").style.gridTemplateColumns="1fr";
+    a.querySelectorAll("#mL .mi").forEach(b=>{const i=+b.dataset.i;b.disabled=true;b.classList.add("ok");b.innerHTML=`${q.pairs[i][0]} → <b>${q.pairs[i][1]}</b>`;});}
+}
+
+/* ================== DIÁLOGOS ================== */
+function dialog(html){$("#modal").innerHTML=`<div class="mhead"><div><span class="dayb">🎄</span></div><button class="x" aria-label="Cerrar" onclick="closeModal()">×</button></div><div class="mbody">${html}</div>`;$("#ov").classList.add("show");cur={done:true};}
+$("#bName").onclick=()=>{dialog(`<div class="q">¿Cómo te llamas?</div><p style="margin:0;color:var(--muted);font-size:14px">Aparecerá en tu diploma final.</p>
+  <input class="field" id="fName" maxlength="40" value="${(S.name||"").replace(/"/g,"&quot;")}" placeholder="Nombre y apellidos">
+  <div class="actions"><span></span><button class="btn gold" id="okName">Guardar</button></div>`);
+  $("#fName").focus();$("#okName").onclick=()=>{S.name=$("#fName").value.trim();save();closeModal();toast("¡Hola, "+(S.name||"anónimo")+"! 👋");};};
+$("#bTeacher").onclick=()=>{
+  if(S.teacher){S.teacher=false;save();renderGrid();toast("Modo profesor desactivado");return;}
+  dialog(`<div class="q">Modo profesor</div><p style="margin:0;color:var(--muted);font-size:14px">Abre todas las puertas para revisarlas o proyectarlas en clase.</p>
+   <input class="field" id="fCode" type="password" placeholder="Código"><div class="err" id="cErr"></div>
+   <div class="actions"><span></span><button class="btn gold" id="okCode">Entrar</button></div>`);
+  $("#fCode").focus();const go=()=>{if($("#fCode").value.trim().toUpperCase()===TEACHER_CODE){S.teacher=true;save();closeModal();toast("🎓 Todas las puertas abiertas");}else{$("#cErr").textContent="Código incorrecto";sfx.ko();}};
+  $("#okCode").onclick=go;$("#fCode").onkeydown=e=>{if(e.key==="Enter")go();};};
+$("#bSound").onclick=()=>{S.sound=!S.sound;save();$("#bSound").textContent=S.sound?"🔊 Efectos":"🔇 Efectos";};
+$("#bMusic").onclick=()=>{S.music=!S.music;save();musicLabel();S.music?musicStart():musicStop();};
+$("#bReset").onclick=()=>{dialog(`<div class="q">¿Reiniciar el calendario?</div><p style="margin:0;color:var(--muted);font-size:14px">Se borrarán tus respuestas y puntos de este navegador.</p>
+  <div class="actions"><button class="btn ghost" style="background:#f3ecdc;color:var(--ink);border:0" onclick="closeModal()">Cancelar</button><button class="btn" style="background:var(--red);color:#fff" id="okReset">Sí, reiniciar</button></div>`);
+  $("#okReset").onclick=()=>{S.answers={};S.streak=0;S.best=0;save();closeModal();toast("Calendario reiniciado");};};
+
+function showCert(){const sc=totalScore(),ok=Object.values(S.answers).filter(a=>a.correct).length;
+  let ri=0;RANKS.forEach((r,i)=>{if(sc>=r[0])ri=i;});
+  const txt=`Calendario de Adviento de Bioquímica · Enfermería UGR\nNombre: ${S.name||"(sin nombre)"}\nPuntos: ${sc} / ${MAX}\nAciertos: ${ok} / 24\nMejor racha: ${S.best}\nNivel: ${RANKS[ri][1]}\n¡Muy feliz Navidad!`;
+  dialog(`<div class="cert"><div style="font-size:54px">🏅</div><div class="q" style="margin:4px 0">¡Calendario completado${S.name?", "+S.name:""}!</div>
+   <div class="big">${sc} pts</div><p style="color:var(--muted);font-weight:700;margin:0 0 10px">${ok} aciertos de 24 · mejor racha ${S.best} 🔥 · ${RANKS[ri][1]}</p>
+   <pre id="certTxt">${txt}</pre>
+   <div class="actions" style="justify-content:center"><button class="btn gold" id="cpy">📋 Copiar resultado para enviarlo</button></div></div>`);
+  confetti(300);
+  $("#cpy").onclick=async()=>{try{await navigator.clipboard.writeText(txt);toast("Copiado ✔ Pégalo en PRADO o en un correo");}catch(e){toast("Selecciona el texto y cópialo a mano");}};}
+
+/* ================== MÚSICA NAVIDEÑA (melodías tradicionales, dominio público) ================== */
+const SONGS=[
+ {bpm:200,n:"E5 1 E5 1 E5 2 E5 1 E5 1 E5 2 E5 1 G5 1 C5 1.5 D5 .5 E5 4 F5 1 F5 1 F5 1.5 F5 .5 F5 1 E5 1 E5 1 E5 .5 E5 .5 E5 1 D5 1 D5 1 E5 1 D5 2 G5 2 E5 1 E5 1 E5 2 E5 1 E5 1 E5 2 E5 1 G5 1 C5 1.5 D5 .5 E5 4 F5 1 F5 1 F5 1 F5 1 F5 1 E5 1 E5 1 E5 .5 E5 .5 G5 1 G5 1 F5 1 D5 1 C5 4 R 2"},
+ {bpm:170,n:"D5 1 G5 1 G5 .5 A5 .5 G5 .5 F#5 .5 E5 1 E5 1 E5 1 A5 1 A5 .5 B5 .5 A5 .5 G5 .5 F#5 1 D5 1 D5 1 B5 1 B5 .5 C6 .5 B5 .5 A5 .5 G5 1 E5 1 D5 .5 D5 .5 E5 1 A5 1 F#5 1 G5 3 R 2"},
+ {bpm:180,n:"C6 1.5 A#5 .5 A5 1 G5 1 F5 1 G5 1 A5 1 F5 1 G5 .5 A5 .5 A#5 .5 G5 .5 A5 1.5 G5 .5 F5 1 E5 1 F5 2 R 1 C6 1.5 A#5 .5 A5 1 G5 1 F5 1 G5 1 A5 1 F5 1 G5 .5 A5 .5 A#5 .5 G5 .5 A5 1.5 G5 .5 F5 1 E5 1 F5 2 R 2"}
+];
+const NOTE={C:0,"C#":1,D:2,"D#":3,E:4,F:5,"F#":6,G:7,"G#":8,A:9,"A#":10,B:11};
+function nfreq(s){const m=s.match(/^([A-G]#?)(\d)$/);return 440*Math.pow(2,((+m[2]+1)*12+NOTE[m[1]]-69)/12);}
+const MUS={on:false,gain:null,song:0,idx:0,next:0,timer:null,seq:[]};
+function getAC(){AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();return AC;}
+function loadSong(i){const t=SONGS[i].n.split(" ");MUS.seq=[];for(let k=0;k<t.length;k+=2)MUS.seq.push([t[k],+t[k+1]]);MUS.idx=0;MUS.beat=60/SONGS[i].bpm;}
+function bell(f,t,d){const ac=AC,g=ac.createGain(),o1=ac.createOscillator(),o2=ac.createOscillator(),g2=ac.createGain();
+  o1.type="sine";o1.frequency.value=f;o2.type="sine";o2.frequency.value=f*2.01;g2.gain.value=.25;
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.6,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+Math.max(.35,d*1.6));
+  o1.connect(g);o2.connect(g2).connect(g);g.connect(MUS.gain);o1.start(t);o2.start(t);o1.stop(t+d*1.7+.4);o2.stop(t+d*1.7+.4);}
+let NOISE=null;
+function jingle(t){const ac=AC;if(!NOISE){NOISE=ac.createBuffer(1,ac.sampleRate*.2,ac.sampleRate);const c=NOISE.getChannelData(0);for(let i=0;i<c.length;i++)c[i]=(Math.random()*2-1)*Math.pow(1-i/c.length,3);}
+  const s=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();s.buffer=NOISE;f.type="highpass";f.frequency.value=7000;g.gain.value=.12;
+  s.connect(f).connect(g).connect(MUS.gain);s.start(t);}
+function schedule(){const ac=AC;while(MUS.next<ac.currentTime+.25){
+    if(MUS.idx>=MUS.seq.length){MUS.song=(MUS.song+1)%SONGS.length;loadSong(MUS.song);}
+    const [n,b]=MUS.seq[MUS.idx++],d=b*MUS.beat;
+    if(n!=="R")bell(nfreq(n),MUS.next,d);
+    for(let k=0;k<b;k+=1)jingle(MUS.next+k*MUS.beat);
+    MUS.next+=d;}}
+function musicStart(){if(MUS.on)return;try{getAC();if(!MUS.gain){MUS.gain=AC.createGain();MUS.gain.connect(AC.destination);}
+  MUS.gain.gain.setValueAtTime(.0001,AC.currentTime);MUS.gain.gain.exponentialRampToValueAtTime(musicLevel(),AC.currentTime+1);
+  loadSong(MUS.song);MUS.next=AC.currentTime+.1;MUS.on=true;MUS.timer=setInterval(schedule,80);schedule();}catch(e){}}
+function musicStop(){if(!MUS.on)return;MUS.on=false;clearInterval(MUS.timer);try{MUS.gain.gain.setTargetAtTime(.0001,AC.currentTime,.15);}catch(e){}}
+function musicLevel(){return $("#ov").classList.contains("show")?.05:.13;}
+function musicDuck(){if(MUS.on&&MUS.gain)try{MUS.gain.gain.setTargetAtTime(musicLevel(),AC.currentTime,.3);}catch(e){}}
+function musicLabel(){$("#bMusic").textContent=S.music?"🎵 Música: sí":"🎵 Música: no";}
+document.addEventListener("pointerdown",()=>{if(S.music!==false&&!MUS.on)musicStart();},{capture:true});
+new MutationObserver(musicDuck).observe($("#ov"),{attributes:true,attributeFilter:["class"]});
+
+/* ================== NIEVE & CONFETI ================== */
+(function snow(){const c=$("#snow"),x=c.getContext("2d");let W,H,f=[];
+  function rs(){W=c.width=innerWidth;H=c.height=innerHeight;f=Array.from({length:Math.min(140,Math.round(W/9))},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*2.4+.6,s:Math.random()*.6+.25,w:Math.random()*Math.PI*2}));}
+  rs();addEventListener("resize",rs);
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  (function loop(){x.clearRect(0,0,W,H);x.fillStyle="rgba(255,255,255,.8)";f.forEach(p=>{if(!reduce){p.y+=p.s;p.w+=.01;p.x+=Math.sin(p.w)*.35;if(p.y>H){p.y=-4;p.x=Math.random()*W;}}
+    x.beginPath();x.arc(p.x,p.y,p.r,0,7);x.fill();});requestAnimationFrame(loop);})();})();
+const CF={c:$("#confetti"),p:[],run:false};
+function confetti(n){const c=CF.c,x=c.getContext("2d");c.width=innerWidth;c.height=innerHeight;
+  const cols=["#f2c14e","#d6453d","#2f8f63","#7fd3ff","#ffffff","#ff9fdc"];
+  for(let i=0;i<n;i++)CF.p.push({x:innerWidth/2+(Math.random()-.5)*200,y:innerHeight*.45,vx:(Math.random()-.5)*14,vy:-Math.random()*14-4,r:Math.random()*6+3,c:cols[i%6],a:Math.random()*6,va:(Math.random()-.5)*.4,life:120+Math.random()*60});
+  if(CF.run)return;CF.run=true;
+  (function loop(){x.clearRect(0,0,c.width,c.height);CF.p=CF.p.filter(p=>p.life-->0&&p.y<c.height+20);
+    CF.p.forEach(p=>{p.vy+=.35;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.a+=p.va;x.save();x.translate(p.x,p.y);x.rotate(p.a);x.fillStyle=p.c;x.fillRect(-p.r/2,-p.r/4,p.r,p.r/2);x.restore();});
+    if(CF.p.length)requestAnimationFrame(loop);else{CF.run=false;x.clearRect(0,0,c.width,c.height);}})();}
+
+$("#bSound").textContent=S.sound?"🔊 Efectos":"🔇 Efectos";
+musicLabel();
+renderGrid();
+
+/* ================== FIREBASE (enlace con el módulo de abajo) ================== */
+let FBMODE=false;
+function esc(t){return String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+window.fbStart=function(aj){FBMODE=true;$("#bReset").style.display="none";$("#bName").style.display="none";
+  if(aj.ranking)$("#rankPanel").style.display="";};
+window.fbNeedLogin=function(){const aj=FB.ajustes,g=$("#gate"),b=$("#gateBox");
+  const grupo=aj.grupos&&aj.grupos.length?`<select class="field" id="gGrupo"><option value="">Elige tu grupo…</option>${aj.grupos.map(x=>`<option>${esc(x)}</option>`).join("")}</select>`:"";
+  b.innerHTML=`<div class="mhead"><div><span class="dayb">🎄 Calendario de Adviento</span></div></div><div class="mbody">
+    <div class="q" style="margin-top:0">¡Bienvenida/o!</div>
+    <p style="margin:0 0 6px;color:var(--muted);font-size:14px">Identifícate para que tus respuestas y tus puntos queden guardados. Podrás seguir desde cualquier dispositivo${aj.acceso==="google"?"":" (usando el mismo navegador)"}.</p>
+    ${aj.acceso==="google"?`${grupo}<button class="btn gold gbtn" id="gGo">🔐 Entrar con mi cuenta de la UGR</button>`
+     :`<input class="field" id="gNom" maxlength="60" placeholder="Nombre y apellidos"><input class="field" id="gMail" type="email" maxlength="80" placeholder="Correo de la UGR">${grupo}<button class="btn gold gbtn" id="gGo">Empezar</button>`}
+    <div class="err" id="gErr" style="margin-top:8px"></div></div>`;
+  g.classList.add("show");
+  $("#gGo").onclick=async()=>{const gr=$("#gGrupo")?$("#gGrupo").value:"";$("#gErr").textContent="";
+    if(aj.grupos&&aj.grupos.length&&!gr){$("#gErr").textContent="Elige tu grupo.";return;}
+    try{$("#gGo").disabled=true;
+      if(aj.acceso==="google")await FB.loginGoogle(gr);
+      else{const n=$("#gNom").value.trim(),m=$("#gMail").value.trim().toLowerCase();
+        if(n.length<3){throw new Error("Escribe tu nombre y apellidos.");}
+        if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m))throw new Error("Escribe un correo válido.");
+        const dom=m.split("@")[1];if(aj.dominios.length&&!aj.dominios.includes(dom))throw new Error("Usa tu correo de la UGR ("+aj.dominios.join(", ")+").");
+        await FB.loginNombre(n,m,gr);}
+    }catch(e){$("#gErr").textContent=e.code==="auth/popup-closed-by-user"?"Has cerrado la ventana de acceso.":(e.message||"No se pudo entrar.");$("#gGo").disabled=false;}};};
+window.fbError=function(msg){const e=$("#gErr");if(e){e.textContent=msg;const b=$("#gGo");if(b)b.disabled=false;}else toast(msg);};
+window.fbSignedIn=function(data){
+  S.answers={};const r=data.respuestas||{};
+  for(const k in r)S.answers[k]={correct:!!r[k].ok,points:r[k].puntos|0,t:r[k].t||0};
+  S.streak=data.racha|0;S.best=data.mejorRacha|0;S.name=data.nombre||"";
+  try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
+  $("#gate").classList.remove("show");$("#bLogout").style.display="";
+  $("#who").textContent="Conectado como "+(data.nombre||data.email||"alumno")+(data.grupo?" · "+data.grupo:"");
+  renderGrid();refreshRanking();toast("¡Hola, "+(data.nombre||"").split(" ")[0]+"! 👋");};
+async function refreshRanking(){if(!(window.FB&&FB.ready&&FB.ajustes.ranking))return;
+  try{const list=await FB.ranking(),me=FB.uid();
+    $("#rkList").innerHTML=list.length?list.map((x,i)=>`<li class="${x.id===me?"me":""}"><span>${["🥇","🥈","🥉"][i]||(i+1)+"."} ${esc(x.alias)}</span><b>${x.puntos}</b></li>`).join(""):"<li>Aún no hay puntuaciones</li>";
+  }catch(e){console.error(e);$("#rkList").innerHTML="<li>No disponible</li>";}}
+$("#bLogout").onclick=()=>{dialog(`<div class="q">¿Cerrar sesión?</div><p style="margin:0;color:var(--muted);font-size:14px">Tus respuestas ya están guardadas. Ciérrala si estás en un ordenador compartido.</p>
+  <div class="actions"><button class="btn ghost" style="background:#f3ecdc;color:var(--ink);border:0" onclick="closeModal()">Cancelar</button><button class="btn gold" id="okOut">Salir</button></div>`);
+  $("#okOut").onclick=()=>{try{localStorage.removeItem(KEY);}catch(e){}FB.logout();};};
+</script>
+
+<script type="module">
+/* ====== Conexión con Firebase (Auth + Firestore). Los datos del proyecto están en firebase-config.js ====== */
+import { firebaseConfig, AJUSTES } from "./firebase-config.js";
+const V="10.12.2";
+const ok=firebaseConfig&&firebaseConfig.apiKey&&!/PEGA|TU_/.test(firebaseConfig.apiKey);
+if(!ok){
+  const bn=document.getElementById("banner");bn.classList.add("show","offline");
+  bn.innerHTML="⚠️ <b>Firebase sin configurar:</b> el calendario funciona, pero las respuestas solo se guardan en este navegador. Rellena <code>firebase-config.js</code>.";
+}else{
+  const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
+  const { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, onAuthStateChanged, signOut } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
+  const { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, query, orderBy, limit, getDocs } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
+  const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
+  let user=null, pend={nombre:"",email:"",grupo:""}, lastPush=Promise.resolve();
+  const alias=n=>{const p=(n||"Anónimo").trim().split(/\s+/);return p[0]+(p[1]?" "+p[1][0]+".":"");};
+  window.FB={ready:false,ajustes:AJUSTES,uid:()=>user&&user.uid,
+    async loginGoogle(grupo){pend.grupo=grupo;const pr=new GoogleAuthProvider();
+      if(AJUSTES.dominios.length===1)pr.setCustomParameters({hd:AJUSTES.dominios[0],prompt:"select_account"});else pr.setCustomParameters({prompt:"select_account"});
+      await signInWithPopup(auth,pr);},
+    async loginNombre(nombre,email,grupo){pend={nombre,email,grupo};await signInAnonymously(auth);},
+    async logout(){await signOut(auth);location.reload();},
+    push(S){const r={};let pts=0,aci=0;
+      for(const k in S.answers){const a=S.answers[k];r[k]={ok:!!a.correct,puntos:a.points|0,t:a.t||Date.now()};pts+=a.points|0;if(a.correct)aci++;}
+      const n=Object.keys(r).length;
+      lastPush=lastPush.then(async()=>{
+        await setDoc(doc(db,"alumnos",user.uid),{respuestas:r,puntos:pts,aciertos:aci,puertas:n,racha:S.streak|0,mejorRacha:S.best|0,actualizado:serverTimestamp()},{merge:true});
+        if(AJUSTES.ranking)await setDoc(doc(db,"ranking",user.uid),{alias:alias(window.__nombre),grupo:window.__grupo||"",puntos:pts,puertas:n,actualizado:serverTimestamp()});
+      });return lastPush;},
+    async ranking(){const q=query(collection(db,"ranking"),orderBy("puntos","desc"),limit(AJUSTES.tamRanking||10));
+      return (await getDocs(q)).docs.map(d=>({id:d.id,...d.data()}));}
+  };
+  window.fbStart(AJUSTES);
+  onAuthStateChanged(auth,async u=>{
+    if(!u){FB.ready=false;window.fbNeedLogin();return;}
+    try{
+      if(AJUSTES.acceso==="google"){const dom=(u.email||"").toLowerCase().split("@")[1];
+        if(AJUSTES.dominios.length&&!AJUSTES.dominios.includes(dom)){await signOut(auth);window.fbError("Esa cuenta no es de la UGR. Entra con tu correo "+AJUSTES.dominios.map(d=>"@"+d).join(" o ")+".");return;}}
+      user=u;const ref=doc(db,"alumnos",u.uid);const snap=await getDoc(ref);let data;
+      if(!snap.exists()){
+        data={nombre:pend.nombre||u.displayName||"",email:(pend.email||u.email||"").toLowerCase(),grupo:pend.grupo||"",
+              respuestas:{},puntos:0,aciertos:0,puertas:0,racha:0,mejorRacha:0,creado:serverTimestamp(),actualizado:serverTimestamp()};
+        await setDoc(ref,data);
+      }else{data=snap.data();if(pend.grupo&&!data.grupo){await setDoc(ref,{grupo:pend.grupo},{merge:true});data.grupo=pend.grupo;}}
+      window.__nombre=data.nombre;window.__grupo=data.grupo;
+      FB.ready=true;window.fbSignedIn(data);
+    }catch(e){console.error(e);window.fbNeedLogin();window.fbError("No se pudo conectar con la base de datos ("+(e.code||e.message)+").");}
+  });
+}
+</script>
+</body>
+</html>
